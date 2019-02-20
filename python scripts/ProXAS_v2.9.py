@@ -1421,7 +1421,6 @@ class DataExtract(tkinter.Frame):
 		
 		print('Joining Output into list')
 		roots = np.asarray(list(itertools.chain(*roots2d)))
-		print(roots)
 		angs = np.asarray(list(itertools.chain(*angs2d)))	
 		self.roots = roots.astype(np.int64)
 		print('number of roots:',len(roots))
