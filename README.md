@@ -22,3 +22,25 @@ Python setup.py install
 
 To run the main program from command prompt use: python ProXAS-GUI.py
 Alternatively if the python interpretter has been set as the default for opening .py files, simply double click or run from command line the ProXAS_v2.9.py file
+
+Package Requirements:
+  numpy
+  pandas
+  matplotlib
+  tkinter
+  subprocess
+  ast
+  re
+  peakutils
+  itertools
+  sys
+  shutil
+  codecs
+  gc
+  os
+  psutil
+  scipy
+  xraylarch
+  xraydb
+  numpy_indexed
+  multiprocessing
