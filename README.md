@@ -26,23 +26,14 @@ Alternatively if the python interpretter has been set as the default for opening
 To run this program the subroutine files are also required (in the same folder as the main script): batch_split_subroutine_v2.1.py, batch_extract_subroutine_v2.8.py
 
 Package Requirements:
-  numpy,
-  pandas,
-  matplotlib,
-  tkinter,
-  subprocess,
-  ast,
-  re,
-  peakutils,
-  itertools,
-  sys,
-  shutil,
-  codecs,
-  gc,
-  os,
-  psutil,
-  scipy,
-  xraylarch,
-  xraydb,
-  numpy_indexed,
-  multiprocessing
+larch  : 0.9.40
+matplotlib  : 2.2.2
+numpy_indexed  : 0.3.5
+numpy  : 1.15.4
+pandas  : 0.22.0
+peakutils  : 1.1.0
+matplotlib : 2.2.2
+psutil  : 5.4.7
+re  : 2.2.1
+scipy  : 1.1.0
+xraydb  : 1.3
