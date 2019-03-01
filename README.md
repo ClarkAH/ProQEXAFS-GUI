@@ -21,7 +21,7 @@ Extract the ZIP file. From command prompt change to the directory where the Xray
 Python setup.py install
 
 To run the main program from command prompt use: python ProXAS-GUI.py
-Alternatively if the python interpretter has been set as the default for opening .py files, simply double click or run from command line the ProXAS_v2.15.py file
+Alternatively if the python interpretter has been set as the default for opening .py files, simply double click or run from command line the ProXAS_v2.16.py file
 
 To run this program the subroutine files are also required (in the same folder as the main script): batch_split_subroutine_v2.1.py, batch_extract_subroutine_v2.8.py
 
