@@ -27,3 +27,5 @@ To run this program the subroutine files are also required (in the same folder a
 
 Package Requirements:
 larch >= 0.9.40, matplotlib >= 2.2.2, numpy_indexed >= 0.3.5, numpy >= 1.15.4, pandas >= 0.22.0, peakutils >= 1.1.0, matplotlib >= 2.2.2, psutil >= 5.4.7, re >= 2.2.1, scipy >= 1.1.0, xraydb >= 1.3
+
+A user manual is supplied but at this stage is under constant revision and update.
