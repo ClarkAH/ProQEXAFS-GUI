@@ -26,7 +26,6 @@ from scipy.signal import savgol_filter
 from matplotlib import gridspec
 import matplotlib.ticker as ticker
 from larch import ValidateLarchPlugin, parse_group_args
-from larch.utils import complex_phase
 from larch_plugins.xafs import set_xafsGroup
 from larch_plugins.xafs.cauchy_wavelet import cauchy_wavelet
 from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable
