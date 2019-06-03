@@ -13,7 +13,7 @@ conda update pandas
 
 conda update scipy
 
-conda update -yc GSECARS xraylarch
+conda install -yc GSECARS xraylarch
 
 Finally, the program internally uses some data that is stored in a Xray Database for elements. Download the following:
 https://github.com/scikit-beam/XrayDB
