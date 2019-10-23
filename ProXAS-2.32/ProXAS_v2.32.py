@@ -2363,13 +2363,13 @@ class PostProcess(tkinter.Frame):
 		
 		Estart = tkinter.Label(self.AverageFrame, text='Emin (eV)',anchor='w')
 		Estart.grid(column=0, row=5, columnspan=2, rowspan=1, sticky='N')
-		self.estartvar = tkinter.DoubleVar()
+		self.estartvar = tkinter.StringVar()
 		self.estartentry = tkinter.Entry(self.AverageFrame, textvariable=self.estartvar)
 		self.estartentry.grid(column=2, row=5, columnspan=1)  	
 		
 		Eend = tkinter.Label(self.AverageFrame, text='Emax (eV)',anchor='w')
 		Eend.grid(column=0, row=6, columnspan=2, rowspan=1, sticky='N')
-		self.eendvar = tkinter.DoubleVar()
+		self.eendvar = tkinter.StringVar()
 		self.eendentry = tkinter.Entry(self.AverageFrame, textvariable=self.eendvar)
 		self.eendentry.grid(column=2, row=6, columnspan=1)  	
 		
@@ -2788,8 +2788,8 @@ class PostProcess(tkinter.Frame):
 				self.data_sum_error.insert(0, 'E', self.data['E'])	
 				
 			print(self.estartvar.get(), self.eendvar.get())
-			if (len(self.estartvar.get()) > 0) and (len(self.eendvar.get()) > 0) and (self.eendvar.get() > self.estartvar.get()) and (self.estartvar.get() < np.max(self.data['E'].values)):
-				self.data_sum = self.data_sum[(self.data_sum['E'] >= self.estartvar.get()) & (self.data_sum['E'] <= self.eendvar.get())]
+			if (len(self.estartvar.get()) > 0) and (len(self.eendvar.get()) > 0) and (float(self.eendvar.get()) > float(self.estartvar.get())) and (float(self.estartvar.get()) < np.max(self.data['E'].values)):
+				self.data_sum = self.data_sum[(self.data_sum['E'] >= float(self.estartvar.get())) & (self.data_sum['E'] <= float(self.eendvar.get()))]
 			
 			self.column_names_sum = self.data_sum.columns.values.tolist()
 			self.progress_bar["value"] = 0
