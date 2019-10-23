@@ -2915,8 +2915,8 @@ class PostProcess(tkinter.Frame):
 					self.line_post = self.plot_add_line(self.data_x, linepost_y)
 			
 				if self.cutusevar.get() != 1:
-					index = min(range(len(self.data_x)), key=lambda i: abs(self.data_x[i]-self.e0_scroll_scale.get()))
-					self.edge_jump = np.around((linepost_y-linepre_y)[index], decimals=2)
+					index = np.argmin(np.abs(np.asarray(self.data_x) - float(self.e0_scroll_scale.get())))
+					self.edge_jump = np.around((linepost_y-linepre_y)[index], decimals=3)
 					self.evjlabel.set(str(self.edge_jump))
 								
 				self.plot_add_markerlines()
