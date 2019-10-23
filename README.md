@@ -5,15 +5,12 @@ Installation Instructions
 The easiest method is to install anaconda python 3 distribution making sure to tick the box to add to system path 
 https://repo.anaconda.com/archive/Anaconda3-5.3.0-Windows-x86_64.exe
 
-Once complete there are some additional packages are required. These can be installed easily from the command prompt using the following commands:
+Once complete there are some additional packages are required. These can be installed easily from the command prompt using the install_script.py contained within the download.
 
-conda install –c conda-forge numpy-indexed
+Alternatively these can in installed from command prompt:
 
-conda update pandas
-
-conda update scipy
-
-conda install -yc GSECARS xraylarch
+conda install -c GSECARS xraylarch
+conda install -yc conda-forge numpy-indexed
 
 To run the main program from command prompt first navigate to the directory contraining the program then use: python ProXAS-GUI.py
 Alternatively if the python interpretter has been set as the default for opening .py files, simply double click or run from command line the ProXAS_v2.28.py file
