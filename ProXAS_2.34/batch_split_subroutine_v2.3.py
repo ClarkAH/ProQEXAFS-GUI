@@ -89,7 +89,7 @@ def targetFunc(work, etd, ID, options, lock):
 		headerSize, line_bytes, dt, nData, nLines = header_read_qex(encoder_bin+'.qex')
 		f = open(encoder_bin+'.qex', 'rb')
 		#encoder = np.zeros(nLines)
-		encoder_2 = np.zeros(np.int(np.floor(nLines/resample_factor)+1))
+		encoder_2 = np.zeros(np.int(np.floor(nLines/resample_factor)))
 		#time_data = np.zeros(nLines)
 		f.seek(0)
 	
@@ -148,19 +148,19 @@ def targetFunc(work, etd, ID, options, lock):
 				
 			indicies = np.asarray(np.where(np.diff(np.sign(c1_derivative)))[0]+1)
 			
-			fig, axs = plt.subplots(2, 1)
+			#fig, axs = plt.subplots(2, 1)
 			
-			axs[0].plot(smoothed_encoder)
-			axs[0].plot(indicies, smoothed_encoder[indicies], 'kx')
-			axs[0].set_xlabel('Encoder Datapoint')
-			axs[0].set_ylabel('Monochromator Angle')
-			
-			axs[1].plot(c1_derivative)
-			axs[1].plot(indicies, c1_derivative[indicies], 'kx')
-			axs[1].set_xlabel('Encoder Datapoint')
-			axs[1].set_ylabel('Derivative Monochromator Angle')
-			plt.show()
-			plt.close()
+			#axs[0].plot(smoothed_encoder)
+			#axs[0].plot(indicies, smoothed_encoder[indicies], 'kx')
+			#axs[0].set_xlabel('Encoder Datapoint')
+			#axs[0].set_ylabel('Monochromator Angle')
+			#
+			#axs[1].plot(c1_derivative)
+			#axs[1].plot(indicies, c1_derivative[indicies], 'kx')
+			#axs[1].set_xlabel('Encoder Datapoint')
+			#axs[1].set_ylabel('Derivative Monochromator Angle')
+			#plt.show()
+			#plt.close()
 			
 			print('print data :', 'indicies found')
 
