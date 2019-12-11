@@ -4,17 +4,17 @@ import matplotlib.pyplot as plt
 from scipy.integrate import simps
 import os
 
-folder = r'E:\ProXAS-2\output_Sr_K_STON6bSr-1pt5V_modulation_60s\Export'
-file = 'STON6bSr-1pt5V_modulation_60s_sam_matrix_Both_normalised_4_average_1.dat'
+folder = r'E:\ProXAS-2\output_Pt_L2_Pt_Cell_L_edge_COOX_cut15ycles_110oC\Export'
+file = 'Pt_Cell_L_edge_COOX_cut15ycles_110oC_sam_matrix_Both_average_2.dat'
 import_data = pd.read_csv(folder+'/'+file, sep='\t', header=0)
 
-period = 60
+period = 240
 nphase = 25
 start_period = 3
 phase_delay = 0
 
 w = 2*np.pi/period
-max_n = 1
+max_n = 7
 
 alpha = 1.05
 
