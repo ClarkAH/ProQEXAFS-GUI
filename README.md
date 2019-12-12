@@ -10,6 +10,7 @@ Once complete there are some additional packages are required. These can be inst
 Alternatively these can in installed from command prompt:
 
 conda install -c GSECARS xraylarch
+
 conda install -c conda-forge numpy-indexed
 
 To run the main program from command prompt first navigate to the directory contraining the program then use: python ProXAS-GUI.py
