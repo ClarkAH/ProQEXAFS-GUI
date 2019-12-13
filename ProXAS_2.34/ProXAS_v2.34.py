@@ -1594,7 +1594,7 @@ class DataExtract(tkinter.Frame):
 			#data_E = np.fromfile(f, dtype=self.dt, count = int(buffer))
 
 		options = [ncpus, np.max(buffer_points), self.headerSize, buffer, encoder_bin, self.nData, resample_factor, enconder_sampling, encoder_smooth, self.file_type]       
-		sub_f = 'batch_split_subroutine_v2.3.py'
+		sub_f = 'batch_split_subroutine_v2.4.py'
 		process = subprocess.Popen(['python', sub_f, str(options)], stdout=subprocess.PIPE, shell=True)
 
 		while process.poll() == None:

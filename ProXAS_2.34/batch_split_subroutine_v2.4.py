@@ -89,7 +89,7 @@ def targetFunc(work, etd, ID, options, lock):
 		headerSize, line_bytes, dt, nData, nLines = header_read_qex(encoder_bin+'.qex')
 		f = open(encoder_bin+'.qex', 'rb')
 		#encoder = np.zeros(nLines)
-		encoder_2 = np.zeros(np.int(np.floor(nLines/resample_factor)))
+		encoder_2 = np.zeros(np.int(np.floor(nLines/resample_factor))+100)
 		#time_data = np.zeros(nLines)
 		f.seek(0)
 	
@@ -106,23 +106,32 @@ def targetFunc(work, etd, ID, options, lock):
 	
 		if 'qex' in file_type:
 			f.seek(int(headerSize))
+			last = 0
+			first = 0
 			
 			for k in range(int(np.ceil(nLines/(resample_factor*80000)))):
 				if ((k+1)*(resample_factor*80000)) > nLines:
+					first = np.int(1+last)
 					data_E = np.fromfile(f, dtype=dt, count = -1)
 					#encoder[k*8000000:nLines+1] = data_E['encoder']
-					encoder_2[np.int(k*(resample_factor*80000)/resample_factor):np.int(np.floor(nLines/resample_factor)+1)] = data_E['encoder'][0::resample_factor]
+					encoder_2[first:first+np.int(len(data_E['encoder'][0::resample_factor]))] = data_E['encoder'][0::resample_factor]
+					last = last + len(data_E['encoder'][0::resample_factor])
 					#time_data[k*8000000:nLines+1] = data_E['time']
 				else:
+					if last != 0:
+						first = np.int(last+1)
 					data_E = np.fromfile(f, dtype=dt, count = int(resample_factor*80000))
 					#encoder[k*8000000:(k+1)*8000000] = data_E['encoder']
-					encoder_2[np.int(k*(resample_factor*80000)/resample_factor):np.int((k+1)*(resample_factor*80000)/resample_factor)] = data_E['encoder'][0::resample_factor]
+					encoder_2[first:first+np.int(len(data_E['encoder'][0::resample_factor]))] = data_E['encoder'][0::resample_factor]
 					#time_data[k*8000000:(k+1)*8000000] = data_E['time']
+					last = last + len(data_E['encoder'][0::resample_factor])
 					
 				lock.acquire()
 				print('data read :', (100*(k+1))/int(np.ceil(nLines/(resample_factor*80000))), ' %')
 				sys.stdout.flush()
 				lock.release()
+				
+			encoder_2 = encoder_2[:last]
 
 				
 		#takes derivate of encoder data and applies Savitzky-Golay filter
