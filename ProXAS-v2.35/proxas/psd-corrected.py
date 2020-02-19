@@ -4,17 +4,20 @@ import matplotlib.pyplot as plt
 from scipy.integrate import simps
 import os
 
-folder = r'E:\ProXAS-2\output_Pt_L2_Pt_Cell_L_edge_COOX_cut15ycles_110oC\Export'
-file = 'Pt_Cell_L_edge_COOX_cut15ycles_110oC_sam_matrix_Both_average_2.dat'
+folder = r'E:\ProXAS-2\output_Ir_L3_IrO2_WEpr1_CEpr1_RE13_1V_1pt6V_500cycles\Export'
+file = 'IrO2_WEpr1_CEpr1_RE13_1V_1pt6V_500cycles_sam_matrix_Up.dat'
 import_data = pd.read_csv(folder+'/'+file, sep='\t', header=0)
 
-period = 240
+period = 100
 nphase = 25
-start_period = 3
-phase_delay = 0
+
+start_period = 140
+end_period = 150
+
+phase_delay = 50
 
 w = 2*np.pi/period
-max_n = 7
+max_n = 1
 
 alpha = 1.05
 
@@ -43,7 +46,7 @@ for j in range(int((max_n-1)/2)+1):
 	if j == 0:
 		for i in range(period+1):
 			columns = headers[(i+phase_delay)::(period+1)]
-			columns=list(columns[(columns >= (period+1)*start_period)])
+			columns=list(columns[(columns >= (period+1)*start_period)&(columns <= (period+1)*end_period)])
 			columns = [str(i) for i in columns]
 			data_to_average = import_data[columns]
 			
@@ -92,5 +95,5 @@ for j in range(int((max_n-1)/2)+1):
 	if not os.path.exists(folder+'/output_psd'):
 		os.makedirs(folder+'/output_psd')
 	
-	output_psd.to_csv(folder+'/output_psd/'+str(os.path.splitext(file)[0])+'_psd_n='+str(n)+'.dat', sep='\t', index=False)
-	period_average.to_csv(folder+'/output_psd/'+str(os.path.splitext(file)[0])+'_period_average.dat', sep='\t', index=False)
+	output_psd.to_csv(folder+'/output_psd/'+str(os.path.splitext(file)[0])+'_psd_n='+str(n)+'_s'+str(start_period)+'_e'+str(end_period)+'.dat', sep='\t', index=False)
+	period_average.to_csv(folder+'/output_psd/'+str(os.path.splitext(file)[0])+'_s'+str(start_period)+'_e'+str(end_period)+'_period_average.dat', sep='\t', index=False)

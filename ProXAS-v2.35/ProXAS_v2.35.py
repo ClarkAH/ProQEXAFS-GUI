@@ -10,7 +10,6 @@ import tkinter, time, os, psutil, subprocess, sys, shutil, ast, codecs, re, larc
 from tkinter.filedialog import askopenfile
 from tkinter import ttk
 from tkinter import END, MULTIPLE
-from scipy.signal import savgol_filter
 from matplotlib.widgets import Button
 import scipy.signal as signal
 from scipy.optimize import curve_fit
@@ -1967,14 +1966,20 @@ class DataExtract(tkinter.Frame):
 		self.normalized = self.normfile_check(self.folder)	
 		
 		if self.updownvar.get() == 0:
-			if not os.path.exists(self.folder+'/Export/Individual_Up'):
-				os.makedirs(self.folder+'/Export/Individual_Up')
+			#if not os.path.exists(self.folder+'/Export/Individual_Up'):
+			#	os.makedirs(self.folder+'/Export/Individual_Up')
+			if not os.path.exists(self.folder+'/Export/Merged_Up'):
+				os.makedirs(self.folder+'/Export/Merged_Up')
 		elif self.updownvar.get() == 1:
-			if not os.path.exists(self.folder+'/Export/Individual_Down'):
-				os.makedirs(self.folder+'/Export/Individual_Down')	
+			#if not os.path.exists(self.folder+'/Export/Individual_Down'):
+			#	os.makedirs(self.folder+'/Export/Individual_Down')	
+			if not os.path.exists(self.folder+'/Export/Merged_Down'):
+				os.makedirs(self.folder+'/Export/Merged_Down')
 		else:
-			if not os.path.exists(self.folder+'/Export/Individual_Both'):
-				os.makedirs(self.folder+'/Export/Individual_Both')
+			#if not os.path.exists(self.folder+'/Export/Individual_Both'):
+			#	os.makedirs(self.folder+'/Export/Individual_Both')
+			if not os.path.exists(self.folder+'/Export/Merged_Both'):
+				os.makedirs(self.folder+'/Export/Merged_Both')
 		
 		num_cpus = self.CPUNumvar.get()
 		print('number of processor cores available = ',num_cpus)
@@ -2061,7 +2066,7 @@ class DataExtract(tkinter.Frame):
 			self.update()
 			options=[int(len(self.calibroots)-5), self.data_file, self.folder, self.file_type, num_cpus, self.ProcessSamUsevar.get(), self.ProcessRefUsevar.get(), self.NormUsevar.get(), self.InterpUsevar.get(), self.AutoAlignUsevar.get(), self.edgestepvar.get(), self.Filtervar.get(), self.bf_scroll_scale.get(), self.eminvar.get(), self.emaxxanesvar.get(), self.emaxexafsvar.get(), self.constkUsevar.get(), self.kstepvar.get(), self.estepvar.get(), str(self.sam_numer.get()), str(self.sam_denom.get()), int(self.sam_logvar.get()), str(self.ref_numer.get()), str(self.ref_denom.get()), int(self.ref_logvar.get()), int(self.Flatvar.get()), self.updownvar.get(), self.edgestepwidth, self.BlackmanHarrisFiltervar.get(), self.blackmanfilterwindowvar.get()]
 		   
-			sub_f = 'batch_extract_subroutine_v2.9.1.py'
+			sub_f = 'batch_extract_subroutine_v2.9.4.py'
 			start_loop = time.time()
 			process = subprocess.Popen(['python', sub_f, str(options)], stdout=subprocess.PIPE, shell=True)
 			
@@ -2079,14 +2084,22 @@ class DataExtract(tkinter.Frame):
 					self.tpstextvar.set(stdoutdata.decode('utf-8').split('\n')[0])
 				if 'Returning' in stdoutdata.decode('utf-8'):
 					self.progress_bar["value"] = 100
-					self.labelText.set('Finishing Up')
+					self.labelText.set('Finishing Up : Saving Partial Matricies')
 					self.progress_bar.update()
-				if 'Returned' in stdoutdata.decode('utf-8'):
-					print('procs finished')
-					self.progress_bar["value"] = 100
-					self.labelText.set('Forming Matrices')
-					self.progress_bar.update()
-					break
+					for i in range(num_cpus):
+						stdoutdata = process.stdout.readline()
+						if 'Returned' in stdoutdata.decode('utf-8'):
+							print('procs finished')
+							self.progress_bar["value"] = 100
+							self.labelText.set('Forming Matrices')
+							self.progress_bar.update()
+							break_flag = True
+							break
+						time.sleep(1)
+					#if break_flag == False:
+					#	print('a process is badly behaving, terminating subprocess')
+					#	process.kill()
+					#	break
 				if 'ID' in stdoutdata.decode('utf-8'):
 					print(stdoutdata.decode('utf-8').split('\n')[0])
 				#print(stdoutdata.decode('utf-8').split('\n')[0])
@@ -2109,31 +2122,68 @@ class DataExtract(tkinter.Frame):
 			if '.bin' in self.file_type:
 				df_ref_error = pd.DataFrame()
 		
-		for i in range(int(len(self.calibroots)-5)):
-			try:
-				if self.updownvar.get() == 0:
-					data_read = pd.read_csv(self.folder+'/Export/Individual_Up/'+str(int(i))+'.dat', sep = '\t', header=0)
-				if self.updownvar.get() == 1:
-					data_read = pd.read_csv(self.folder+'/Export/Individual_Down/'+str(int(i))+'.dat', sep = '\t', header=0)
-				if self.updownvar.get() == 2:
-					data_read = pd.read_csv(self.folder+'/Export/Individual_Both/'+str(int(i))+'.dat', sep = '\t', header=0)
+		#for i in range(int(len(self.calibroots)-5)):
+		#	try:
+		#		if self.updownvar.get() == 0:
+		#			data_read = pd.read_csv(self.folder+'/Export/Individual_Up/'+str(int(i))+'.dat', sep = '\t', header=0)
+		#		if self.updownvar.get() == 1:
+		#			data_read = pd.read_csv(self.folder+'/Export/Individual_Down/'+str(int(i))+'.dat', sep = '\t', header=0)
+		#		if self.updownvar.get() == 2:
+		#			data_read = pd.read_csv(self.folder+'/Export/Individual_Both/'+str(int(i))+'.dat', sep = '\t', header=0)
+		#		if self.ProcessSamUsevar.get() == 1:
+		#			df_sam[str(i)] = data_read['mu_sam']
+		#			#if '.bin' in self.file_type:
+		#			#	df_sam_error[str(i)] = data_read['std_sam']
+		#		if self.ProcessRefUsevar.get() == 1:
+		#			df_ref[str(i)] = data_read['mu_ref']
+		#			#if '.bin' in self.file_type:
+		#			#	df_ref_error[str(i)] = data_read['std_ref']
+		#		i = i+1
+		#	except:
+		#		none_vals.append(i)
+		#		i = i+1
+		for i in range(num_cpus):
+			if self.updownvar.get() == 0:
 				if self.ProcessSamUsevar.get() == 1:
-					df_sam[str(i)] = data_read['mu_sam']
-					#if '.bin' in self.file_type:
-					#	df_sam_error[str(i)] = data_read['std_sam']
+					data_read_sample = pd.read_csv(self.folder+'/Export/Merged_Up/sample_'+str(int(i))+'.dat', sep = '\t', header=0)
 				if self.ProcessRefUsevar.get() == 1:
-					df_ref[str(i)] = data_read['mu_ref']
-					#if '.bin' in self.file_type:
-					#	df_ref_error[str(i)] = data_read['std_ref']
-				i = i+1
-			except:
-				none_vals.append(i)
-				i = i+1
-			self.progress_bar["value"] = 100*(i+1)/(len(self.calibroots)-5)
+					data_read_reference = pd.read_csv(self.folder+'/Export/Merged_Up/reference_'+str(int(i))+'.dat', sep = '\t', header=0)
+			if self.updownvar.get() == 1:
+				if self.ProcessSamUsevar.get() == 1:
+					data_read_sample = pd.read_csv(self.folder+'/Export/Merged_Down/sample_'+str(int(i))+'.dat', sep = '\t', header=0)
+				if self.ProcessRefUsevar.get() == 1:
+					data_read_reference = pd.read_csv(self.folder+'/Export/Merged_Down/reference_'+str(int(i))+'.dat', sep = '\t', header=0)
+			if self.updownvar.get() == 2:
+				if self.ProcessSamUsevar.get() == 1:
+					data_read_sample = pd.read_csv(self.folder+'/Export/Merged_Both/sample_'+str(int(i))+'.dat', sep = '\t', header=0)
+				if self.ProcessRefUsevar.get() == 1:
+					data_read_reference = pd.read_csv(self.folder+'/Export/Merged_Both/reference_'+str(int(i))+'.dat', sep = '\t', header=0)
+			if i == 0:
+				if self.ProcessSamUsevar.get() == 1:
+					E_axis = data_read_sample['E']
+				elif self.ProcessRefUsevar.get() == 1:
+					E_axis = data_read_reference['E']
+				
+			if self.ProcessSamUsevar.get() == 1:
+				data_read_sample.drop(columns=['E'], inplace=True)
+				df_sam = pd.concat([df_sam, data_read_sample], axis=1, sort=False)
+			if self.ProcessRefUsevar.get() == 1:
+				data_read_reference.drop(columns=['E'], inplace=True)
+				df_ref = pd.concat([df_ref, data_read_reference], axis=1, sort=False)
+		
+			self.progress_bar["value"] = 100*(i+1)/num_cpus
 			self.progress_bar.update() 
 			self.update()
+		if self.ProcessSamUsevar.get() == 1:	
+			x = [str(i) for i in sorted(df_sam.columns.astype(int))]
+			df_sam = df_sam[x]
+			df_sam.insert(0, 'E', E_axis)
+		if self.ProcessRefUsevar.get() == 1:
+			x = [str(i) for i in sorted(df_ref.columns.astype(int))]
+			df_ref = df_ref[x]
+			df_ref.insert(0, 'E', E_axis)
 		
-		self.labelText.set('Saving Matrices')
+		self.labelText.set('Saving Matrices : Can take time')
 		self.update()		
 		
 		if int(self.updownvar.get()) == 0:
@@ -2145,7 +2195,6 @@ class DataExtract(tkinter.Frame):
 		
 		try:
 			if self.ProcessSamUsevar.get() == 1:
-				df_sam.insert(0, 'E', data_read['E'])
 				df_sam.to_csv(self.folder+'/Export/'+self.data_file.split('/')[-1]+'_sam_matrix_'+updownstring+'.dat', sep='\t', index=False)
 				#if '.bin' in self.file_type:
 				#	df_sam_error.insert(0, 'E', data_read['E'])
@@ -2156,7 +2205,6 @@ class DataExtract(tkinter.Frame):
 		
 		try:            
 			if self.ProcessRefUsevar.get() == 1:
-				df_ref.insert(0, 'E', data_read['E'])
 				df_ref.to_csv(self.folder+'/Export/'+self.data_file.split('/')[-1]+'_ref_matrix_'+updownstring+'.dat', sep='\t', index=False)
 				#if '.bin' in self.file_type:
 				#	df_ref_error.insert(0, 'E', data_read['E'])

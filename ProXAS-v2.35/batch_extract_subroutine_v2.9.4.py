@@ -46,11 +46,11 @@ def spawn(options):
 			for cpu_i in range(n_cpus):
 				d = dict(affinity = int(core_affinity_list[cpu_i].item()), q = q, ID = cpu_i, options = options)
 				p = mp.Process(target=wrapper_targetFunc, kwargs=d)
-				p.start()
 				procs.append(p)
+				p.start()
 			for p in procs:
 				p.join()
-	time.sleep(2)
+
 	sys.stdout.flush()
 	print('Returned to Main')
 	sys.stdout.flush()
@@ -100,7 +100,7 @@ def wrapper_targetFunc(affinity, q, ID, options):
 		print('Percent Complete =',100)
 		print('Returning to Main')
 	sys.stdout.flush()
-	os._exit(0)
+	sys.exit(0)
  
 ################################################################################   
 def targetFunc(q, etd, ID, options):
@@ -133,19 +133,31 @@ def targetFunc(q, etd, ID, options):
 	if float(InterpUsevar) == 1:\
 		xnew = (pd.read_csv(folder+'/xnew.dat', sep='\t', header = None)).iloc[:,0].values
 		
-	time.sleep(0.5*ID/n_cpus)
+	return_sam = pd.DataFrame()
+	return_ref = pd.DataFrame()
 	
 	if (calibrated == True) & (rootsfile == True):
+		initialized = False
 		while not q.empty():
 			i = q.get()
 			root_i = spectra[i]
 		
 			if '.bin' in file_type:
-				ang,mu_sam,mu_ref,std_sam,std_ref,flag = data_read_bin(root_i, minr)
+				if initialized == False:
+					headerSize, nData = header_read_bin(data_file)
+					ch_headerSize, nChannels, d_types = header_read_bin_ch(data_file)
+					initialized = True
+						
+				ang,mu_sam,mu_ref,std_sam,std_ref,flag = data_read_bin(root_i, minr, headerSize, nData, ch_headerSize, nChannels, d_types)
 				errors_flag = True
 				
 			elif '.qex' in file_type:
-				ang,mu_sam,mu_ref,time_points,AdcClock,flag = data_read_qex(root_i, minr)
+				if initialized == False:
+					headerSize, line_bytes, dt, nData, nChannels, AdcClock, qex_file = header_read_qex(data_file)
+					qex_file = codecs.open(data_file+'.qex', 'rb', encoding='cp1252') 
+					initialized = True
+						
+				ang,mu_sam,mu_ref,time_points,AdcClock,flag = data_read_qex(root_i, minr, headerSize, line_bytes, dt, nData, nChannels, AdcClock, qex_file)
 				time_points = (np.cumsum(time_points)-time_points[0])/AdcClock
 				np.insert(time_points , 0, 0)
 				errors_flag = False
@@ -205,25 +217,32 @@ def targetFunc(q, etd, ID, options):
 						if errors_flag == True:
 							energy, std_ref = interpolate(energy, std_ref, xnew)
 					
-				df = pd.DataFrame()
-				df['E'] = energy
+				#df = pd.DataFrame()
+				#df['E'] = energy
+				return_sam['E'] = energy
+				return_ref['E'] = energy
+				
 				if float(ProcessSamvar) == 1:
-					df['mu_sam'] = mu_sam
+					#df['mu_sam'] = mu_sam
+					return_sam[str(i)] = mu_sam
 					if errors_flag == True:
-						df['std_sam'] = std_sam
+						#df['std_sam'] = std_sam
+						return_sam['std_'+str(i)] = std_sam
 				if float(ProcessRefvar) == 1:
-					df['mu_ref'] = mu_ref
+					#df['mu_ref'] = mu_ref
+					return_ref[str(i)] = mu_ref
 					if errors_flag == True:
-						df['std_ref'] = std_ref
+						#df['std_ref'] = std_ref
+						return_ref['std_'+str(i)] = std_ref
 				#if 'qex' in file_type:
 				#	df['time'] = time_points
 				
-				if updownvar == 0:
-					df.to_csv(folder+'/Export/Individual_Up/'+str(i)+'.dat', sep='\t', header=True, index=False)
-				elif updownvar == 1:
-					df.to_csv(folder+'/Export/Individual_Down/'+str(i)+'.dat', sep='\t', header=True, index=False)
-				else:
-					df.to_csv(folder+'/Export/Individual_Both/'+str(i)+'.dat', sep='\t', header=True, index=False)
+				#if updownvar == 0:
+				#	df.to_csv(folder+'/Export/Individual_Up/'+str(i)+'.dat', sep='\t', header=True, index=False)
+				#elif updownvar == 1:
+				#	df.to_csv(folder+'/Export/Individual_Down/'+str(i)+'.dat', sep='\t', header=True, index=False)
+				#else:
+				#	df.to_csv(folder+'/Export/Individual_Both/'+str(i)+'.dat', sep='\t', header=True, index=False)
 
 			qs = q.qsize()
 			
@@ -233,16 +252,29 @@ def targetFunc(q, etd, ID, options):
 				print('Time Per Spectrum (s):',round(tps, 4))
 				print('Estimated Time Remaining:',time.strftime("%H:%M:%S", time.gmtime(qs*tps)))
 			sys.stdout.flush()
+			
+		if updownvar == 0:
+			if float(ProcessSamvar) == 1:	
+				return_sam.to_csv(folder+'/Export/Merged_Up/sample_'+str(ID)+'.dat', sep='\t', header=True, index=False)
+			if float(ProcessRefvar) == 1:
+				return_ref.to_csv(folder+'/Export/Merged_Up/reference_'+str(ID)+'.dat', sep='\t', header=True, index=False)
+		elif updownvar == 1:
+			if float(ProcessSamvar) == 1:	
+				return_sam.to_csv(folder+'/Export/Merged_Down/sample_'+str(ID)+'.dat', sep='\t', header=True, index=False)
+			if float(ProcessRefvar) == 1:
+				return_ref.to_csv(folder+'/Export/Merged_Down/reference_'+str(ID)+'.dat', sep='\t', header=True, index=False)
+		else:
+			if float(ProcessSamvar) == 1:	
+				return_sam.to_csv(folder+'/Export/Merged_Both/sample_'+str(ID)+'.dat', sep='\t', header=True, index=False)
+			if float(ProcessRefvar) == 1:
+				return_ref.to_csv(folder+'/Export/Merged_Both/reference_'+str(ID)+'.dat', sep='\t', header=True, index=False)
 	
 ################################################################################  
-def data_read_qex(root_i, minr):
-	headerSize, line_bytes, dt, nData, nChannels, AdcClock = header_read_qex(data_file)
+def data_read_qex(root_i, minr, headerSize, line_bytes, dt, nData, nChannels, AdcClock, qex_file):
 
 	root = int(roots_file_data[root_i+3])
 	root_end = roots_file_data[root_i+4]
 	minr = int(root_end - root)
-	
-	qex_file = codecs.open(data_file+'.qex', 'rb', encoding='cp1252') 
 
 	qex_file.seek(int(headerSize)+(int(line_bytes)*root))
 
@@ -321,11 +353,15 @@ def data_read_qex(root_i, minr):
 ################################################################################   
 def header_read_qex(filename):
 	header_lines = []
-	with codecs.open(filename+'.qex', 'rb', encoding='cp1252', errors='ignore') as qex_file:
-		line = qex_file.readline().strip('\r\n').replace('# ', '')
+	
+	qex_file = codecs.open(data_file+'.qex', 'rb', encoding='cp1252') 
+	line = qex_file.readline().strip('\r\n').replace('# ', '')
+	try:
 		while not '_Header_End_'in line:
 			header_lines.append(line)
 			line = qex_file.readline().strip('\r\n').replace('# ', '')
+	except:
+		print('error')
 		
 	#search headerlines for keywords
 	headerSize = np.int([x for x in header_lines if 'FileHeaderSize_byte' in x][0].split(': ')[1])
@@ -348,12 +384,10 @@ def header_read_qex(filename):
 
 	dt = np.dtype(d_types)	
 
-	return headerSize, line_bytes, dt, nData, nChannels, AdcClock
+	return headerSize, line_bytes, dt, nData, nChannels, AdcClock, qex_file
 		
 ################################################################################  
-def data_read_bin(root_i, minr):
-	headerSize, nData = header_read_bin(data_file)
-	ch_headerSize, nChannels, d_types = header_read_bin_ch(data_file)
+def data_read_bin(root_i, minr, headerSize, nData, ch_headerSize, nChannels, d_types):
 	
 	root = roots_file_data[root_i+3]
 	root_end = roots_file_data[root_i+4]
