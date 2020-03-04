@@ -2065,6 +2065,7 @@ class DataExtract(tkinter.Frame):
 		if proceed_var == True:
 			self.update()
 			options=[int(len(self.calibroots)-5), self.data_file, self.folder, self.file_type, num_cpus, self.ProcessSamUsevar.get(), self.ProcessRefUsevar.get(), self.NormUsevar.get(), self.InterpUsevar.get(), self.AutoAlignUsevar.get(), self.edgestepvar.get(), self.Filtervar.get(), self.bf_scroll_scale.get(), self.eminvar.get(), self.emaxxanesvar.get(), self.emaxexafsvar.get(), self.constkUsevar.get(), self.kstepvar.get(), self.estepvar.get(), str(self.sam_numer.get()), str(self.sam_denom.get()), int(self.sam_logvar.get()), str(self.ref_numer.get()), str(self.ref_denom.get()), int(self.ref_logvar.get()), int(self.Flatvar.get()), self.updownvar.get(), self.edgestepwidth, self.BlackmanHarrisFiltervar.get(), self.blackmanfilterwindowvar.get()]
+			break_flag = False
 		   
 			sub_f = 'batch_extract_subroutine_v2.9.4.py'
 			start_loop = time.time()
@@ -2085,8 +2086,9 @@ class DataExtract(tkinter.Frame):
 				if 'Returning' in stdoutdata.decode('utf-8'):
 					self.progress_bar["value"] = 100
 					self.labelText.set('Finishing Up : Saving Partial Matricies')
+					time_to_wait = time.time() - start_loop
 					self.progress_bar.update()
-					for i in range(num_cpus):
+					for i in range(int(np.around(time_to_wait, decimals=0))):
 						stdoutdata = process.stdout.readline()
 						if 'Returned' in stdoutdata.decode('utf-8'):
 							print('procs finished')
@@ -2096,10 +2098,10 @@ class DataExtract(tkinter.Frame):
 							break_flag = True
 							break
 						time.sleep(1)
-					#if break_flag == False:
-					#	print('a process is badly behaving, terminating subprocess')
-					#	process.kill()
-					#	break
+					if break_flag == False:
+						print('a process is badly behaving, terminating subprocess')
+						process.kill()
+						break
 				if 'ID' in stdoutdata.decode('utf-8'):
 					print(stdoutdata.decode('utf-8').split('\n')[0])
 				#print(stdoutdata.decode('utf-8').split('\n')[0])
@@ -2822,13 +2824,13 @@ class PostProcess(tkinter.Frame):
 				if startval == True:
 					if int(idxs[1]) - int(idxs[0]) == 2:
 						idx = int(self.nstartvar.get()) + npi.indices(np.asarray(idxs), np.asarray(idxs)[(np.asarray(idxs) >= ((j*Nsum)+2*int(self.nstartvar.get()))) & (np.asarray(idxs) < ((j*Nsum)+Nsum+2*int(self.nstartvar.get())))])
-						print(j, idx)
+						#print(j, idx)
 					else:
 						idx = int(self.nstartvar.get()) + npi.indices(np.asarray(idxs), np.asarray(idxs)[(np.asarray(idxs) >= ((j*Nsum)+int(self.nstartvar.get()))) & (np.asarray(idxs) < ((j*Nsum)+Nsum+int(self.nstartvar.get())))])
-						print(j, idx)
+						#print(j, idx)
 				else:
 					idx = npi.indices(np.asarray(idxs), np.asarray(idxs)[(np.asarray(idxs) >= (j*Nsum)) & (np.asarray(idxs) < (j*Nsum)+Nsum)])
-					print(j, idx)
+					#print(j, idx)
 				if len(idx) > 0:
 					self.data_sum[str(j)] = (self.data.iloc[:,idx+1]).mean(axis=1)
 					if self.errors_flag == True:
@@ -4543,10 +4545,22 @@ class Analysis(tkinter.Frame):
 			Concentrations_df = pd.DataFrame(self.C_u)
 			
 		Concentrations_df['Energy'] = self.energy
-
 		Concentrations_df['LOF'] = self.LOF
+		Concentrations_df.to_csv(self.folder+'\lcf_concentrations_'+str(np.shape(self.S)[1])+'.dat', sep='\t', index=False)
 		
-		Concentrations_df.to_csv(self.folder+'\lcf_concentrations.dat', sep='\t', index=False)
+		if self.constrainusevar.get() == 1:
+			fit = np.dot(self.C_c, self.S.T).T
+		else: 
+			fit = np.dot(self.C_u, self.S.T).T
+			
+		fit_df = pd.DataFrame(fit)
+		fit_df.insert(0, 'Energy', self.energy)
+		fit_df.to_csv(self.folder+'\lcf_fit_'+str(np.shape(self.S)[1])+'.dat', sep='\t', index=False)
+
+		Spectra_df = pd.DataFrame(self.S)
+		Spectra_df.insert(0, 'Energy', self.energy)
+		Spectra_df.to_csv(self.folder+'\lcf_spectra_'+str(np.shape(self.S)[1])+'.dat', sep='\t', index=False)
+		
 		
 		print('File Saved')
 	
@@ -4610,14 +4624,18 @@ class Analysis(tkinter.Frame):
 		Spectra_df = pd.DataFrame(self.mcrals.ST_opt_.T)
 		Concentrations_df = pd.DataFrame(self.mcrals.C_opt_)
 		Concentrations_df['LOF'] = self.LOF
+		Concentrations_df.to_csv(self.folder+'\mcr_concetrations_'+str(np.shape(self.mcrals.ST_opt_)[0])+'.dat', sep='\t', index=True)
 		
-		Concentrations_df.to_csv(self.folder+'\mcr_concetrations.dat', sep='\t', index=True)
-		
+		fit = np.dot(self.mcrals.C_opt_, self.mcrals.ST_opt_).T
+		fit_df = pd.DataFrame(fit)
+		fit_df.insert(0, 'Energy', self.energy)
+		fit_df.to_csv(self.folder+'\mcr_fit_'+str(np.shape(self.mcrals.ST_opt_)[0])+'.dat', sep='\t', index=False)
+
 		try:
 			Spectra_df.insert(0, 'Energy', self.energy)
-			Spectra_df.to_csv(self.folder+'\mcr_spectra.dat', sep='\t', index=False)
+			Spectra_df.to_csv(self.folder+'\mcr_spectra_'+str(np.shape(self.mcrals.ST_opt_)[0])+'.dat', sep='\t', index=False)
 		except:
-			Spectra_df.to_csv(self.folder+'\mcr_spectra.dat', sep='\t', index=False)
+			Spectra_df.to_csv(self.folder+'\mcr_spectra_'+str(np.shape(self.mcrals.ST_opt_)[0])+'.dat', sep='\t', index=False)
 			
 		print('Files Saved')
 				

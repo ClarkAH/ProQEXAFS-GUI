@@ -253,21 +253,25 @@ def targetFunc(q, etd, ID, options):
 				print('Estimated Time Remaining:',time.strftime("%H:%M:%S", time.gmtime(qs*tps)))
 			sys.stdout.flush()
 			
-		if updownvar == 0:
-			if float(ProcessSamvar) == 1:	
-				return_sam.to_csv(folder+'/Export/Merged_Up/sample_'+str(ID)+'.dat', sep='\t', header=True, index=False)
-			if float(ProcessRefvar) == 1:
-				return_ref.to_csv(folder+'/Export/Merged_Up/reference_'+str(ID)+'.dat', sep='\t', header=True, index=False)
-		elif updownvar == 1:
-			if float(ProcessSamvar) == 1:	
-				return_sam.to_csv(folder+'/Export/Merged_Down/sample_'+str(ID)+'.dat', sep='\t', header=True, index=False)
-			if float(ProcessRefvar) == 1:
-				return_ref.to_csv(folder+'/Export/Merged_Down/reference_'+str(ID)+'.dat', sep='\t', header=True, index=False)
-		else:
-			if float(ProcessSamvar) == 1:	
-				return_sam.to_csv(folder+'/Export/Merged_Both/sample_'+str(ID)+'.dat', sep='\t', header=True, index=False)
-			if float(ProcessRefvar) == 1:
-				return_ref.to_csv(folder+'/Export/Merged_Both/reference_'+str(ID)+'.dat', sep='\t', header=True, index=False)
+		try:
+			test = energy
+			if updownvar == 0:
+				if float(ProcessSamvar) == 1:	
+					return_sam.to_csv(folder+'/Export/Merged_Up/sample_'+str(ID)+'.dat', sep='\t', header=True, index=False)
+				if float(ProcessRefvar) == 1:
+					return_ref.to_csv(folder+'/Export/Merged_Up/reference_'+str(ID)+'.dat', sep='\t', header=True, index=False)
+			elif updownvar == 1:
+				if float(ProcessSamvar) == 1:	
+					return_sam.to_csv(folder+'/Export/Merged_Down/sample_'+str(ID)+'.dat', sep='\t', header=True, index=False)
+				if float(ProcessRefvar) == 1:
+					return_ref.to_csv(folder+'/Export/Merged_Down/reference_'+str(ID)+'.dat', sep='\t', header=True, index=False)
+			else:
+				if float(ProcessSamvar) == 1:	
+					return_sam.to_csv(folder+'/Export/Merged_Both/sample_'+str(ID)+'.dat', sep='\t', header=True, index=False)
+				if float(ProcessRefvar) == 1:
+					return_ref.to_csv(folder+'/Export/Merged_Both/reference_'+str(ID)+'.dat', sep='\t', header=True, index=False)
+		except:
+			print('no data processed')
 	
 ################################################################################  
 def data_read_qex(root_i, minr, headerSize, line_bytes, dt, nData, nChannels, AdcClock, qex_file):

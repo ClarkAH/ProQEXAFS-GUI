@@ -4,16 +4,16 @@ import matplotlib.pyplot as plt
 from scipy.integrate import simps
 import os
 
-folder = r'E:\ProXAS-2\output_Co_K_K2Co10TiO2_H2_to_CO2\Export'
-file = 'K2Co10TiO2_H2_to_CO2_sam_matrix_Both_average_2_normalised.dat'
+folder = r'E:\ProXAS-2\output_Sr_K_STON6bSr-1pt5V_modulation_60s\Export'
+file = 'STON6bSr-1pt5V_modulation_60s_sam_matrix_Both_normalised_4.dat'
 
 import_data = pd.read_csv(folder+'/'+file, sep='\t', header=0)
 
-period = 1200
+period = 32
 nphase = 25
 
-start_period = 1
-end_period = 5
+start_period = 5
+end_period = 999
 
 phase_delay = 0
 
