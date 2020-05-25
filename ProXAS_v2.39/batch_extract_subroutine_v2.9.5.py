@@ -48,6 +48,7 @@ def spawn(options):
 				p = mp.Process(target=wrapper_targetFunc, kwargs=d)
 				procs.append(p)
 				p.start()
+				time.sleep(0.1)
 			for p in procs:
 				p.join()
 
@@ -139,119 +140,123 @@ def targetFunc(q, etd, ID, options):
 	if (calibrated == True) & (rootsfile == True):
 		initialized = False
 		while not q.empty():
-			i = q.get()
-			root_i = spectra[i]
-		
-			if '.bin' in file_type:
-				if initialized == False:
-					headerSize, nData = header_read_bin(data_file)
-					ch_headerSize, nChannels, d_types = header_read_bin_ch(data_file)
-					initialized = True
-						
-				ang,mu_sam,mu_ref,std_sam,std_ref,flag = data_read_bin(root_i, minr, headerSize, nData, ch_headerSize, nChannels, d_types)
-				errors_flag = True
-				
-			elif '.qex' in file_type:
-				if initialized == False:
-					headerSize, line_bytes, dt, nData, nChannels, AdcClock, qex_file = header_read_qex(data_file)
-					qex_file = codecs.open(data_file+'.qex', 'rb', encoding='cp1252') 
-					initialized = True
-						
-				ang,mu_sam,mu_ref,time_points,AdcClock,flag = data_read_qex(root_i, minr, headerSize, line_bytes, dt, nData, nChannels, AdcClock, qex_file)
-				time_points = (np.cumsum(time_points)-time_points[0])/AdcClock
-				np.insert(time_points , 0, 0)
-				errors_flag = False
-				
-			energy = 1239.852/(float(calibration_values[3])*np.sin((ang+(calibration_values[1]-calibration_values[0]))*np.pi/180))
+			try:
+				i = q.get()
+				root_i = spectra[i]
 			
-			#print('updownvar :', updownvar, flag)
-			
-			if (int(updownvar) == 2) or (flag == int(updownvar)):
-				if energy[0] > energy[1]:
-					energy = energy[::-1]
-					mu_sam = mu_sam[::-1]
-					mu_ref = mu_ref[::-1]
-					if errors_flag == True:
-						std_sam = mu_sam[::-1]
-						std_ref = mu_ref[::-1]
-			
-				if float(Filtervar) == 1:
-					if float(ProcessSamvar) == 1:
-						mu_sam = signal.filtfilt(B,A,mu_sam)
-					if float(ProcessRefvar) == 1:
-						mu_ref = signal.filtfilt(B,A,mu_ref)
+				if '.bin' in file_type:
+					if initialized == False:
+						headerSize, nData = header_read_bin(data_file)
+						ch_headerSize, nChannels, d_types = header_read_bin_ch(data_file)
+						initialized = True
+							
+					ang,mu_sam,mu_ref,std_sam,std_ref,flag = data_read_bin(root_i, minr, headerSize, nData, ch_headerSize, nChannels, d_types)
+					errors_flag = True
 					
-				if (normalized == True) & (float(NormUsevar) == 1):
-					if float(ProcessSamvar) == 1:
-						mu_sam = normalize_data(energy, mu_sam)
-						if errors_flag == True:
-							if float(Filtervar) == 1:
-								error_estimation = np.empty(len(mu_sam))
-								error_estimation.fill(np.std(mu_sam[int(-np.floor(len(mu_sam)/5)):]))
-								std_sam = error_estimation
-							else:
-								std_sam = (std_sam/normdivisor) * 1000 / len(std_sam)
-					if float(ProcessRefvar) == 1:
-						mu_ref = normalize_data(energy, mu_ref)
-						if errors_flag == True:
-							if float(Filtervar) == 1:
-								error_estimation = np.empty(len(mu_ref))
-								error_estimation.fill(np.std(mu_ref[int(-np.floor(len(mu_ref)/5)):]))
-								std_ref = error_estimation
-							else:
-								std_ref = (std_ref/normdivisor) * 1000 / len(std_ref)
-						
-				if (float(AutoAlignUsevar) == 1) & (float(NormUsevar) == 1) & (normalized == True) & (float(ProcessRefvar) == 1):
-					popt, pcov = curve_fit(cumgauss, energy, mu_ref, (float(e0), float(edgestepwidth)))
-					ec = float(edgestepvar) - popt[0]	
-					energy = energy + ec
-						
-				if float(InterpUsevar) == 1:
-					energy_input = energy
-					if float(ProcessSamvar) == 1:
-						energy, mu_sam = interpolate(energy_input, mu_sam, xnew)
-						if errors_flag == True:
-							energy, std_sam = interpolate(energy, std_sam, xnew)
-					if float(ProcessRefvar) == 1:
-						energy, mu_ref = interpolate(energy_input, mu_ref, xnew)
-						if errors_flag == True:
-							energy, std_ref = interpolate(energy, std_ref, xnew)
+				elif '.qex' in file_type:
+					if initialized == False:
+						headerSize, line_bytes, dt, nData, nChannels, AdcClock, qex_file = header_read_qex(data_file)
+						qex_file = codecs.open(data_file+'.qex', 'rb', encoding='cp1252') 
+						initialized = True
+							
+					ang,mu_sam,mu_ref,time_points,AdcClock,flag = data_read_qex(root_i, minr, headerSize, line_bytes, dt, nData, nChannels, AdcClock, qex_file)
+					time_points = (np.cumsum(time_points)-time_points[0])/AdcClock
+					np.insert(time_points , 0, 0)
+					errors_flag = False
 					
-				#df = pd.DataFrame()
-				#df['E'] = energy
-				return_sam['E'] = energy
-				return_ref['E'] = energy
+				energy = 1239.852/(float(calibration_values[3])*np.sin((ang+(calibration_values[1]-calibration_values[0]))*np.pi/180))
 				
-				if float(ProcessSamvar) == 1:
-					#df['mu_sam'] = mu_sam
-					return_sam[str(i)] = mu_sam
-					if errors_flag == True:
-						#df['std_sam'] = std_sam
-						return_sam['std_'+str(i)] = std_sam
-				if float(ProcessRefvar) == 1:
-					#df['mu_ref'] = mu_ref
-					return_ref[str(i)] = mu_ref
-					if errors_flag == True:
-						#df['std_ref'] = std_ref
-						return_ref['std_'+str(i)] = std_ref
-				#if 'qex' in file_type:
-				#	df['time'] = time_points
+				#print('updownvar :', updownvar, flag)
 				
-				#if updownvar == 0:
-				#	df.to_csv(folder+'/Export/Individual_Up/'+str(i)+'.dat', sep='\t', header=True, index=False)
-				#elif updownvar == 1:
-				#	df.to_csv(folder+'/Export/Individual_Down/'+str(i)+'.dat', sep='\t', header=True, index=False)
-				#else:
-				#	df.to_csv(folder+'/Export/Individual_Both/'+str(i)+'.dat', sep='\t', header=True, index=False)
-
-			qs = q.qsize()
+				if (int(updownvar) == 2) or (flag == int(updownvar)):
+					if energy[0] > energy[1]:
+						energy = energy[::-1]
+						mu_sam = mu_sam[::-1]
+						mu_ref = mu_ref[::-1]
+						if errors_flag == True:
+							std_sam = mu_sam[::-1]
+							std_ref = mu_ref[::-1]
+				
+					if float(Filtervar) == 1:
+						if float(ProcessSamvar) == 1:
+							mu_sam = signal.filtfilt(B,A,mu_sam)
+						if float(ProcessRefvar) == 1:
+							mu_ref = signal.filtfilt(B,A,mu_ref)
+						
+					if (normalized == True) & (float(NormUsevar) == 1):
+						if float(ProcessSamvar) == 1:
+							mu_sam = normalize_data(energy, mu_sam)
+							if errors_flag == True:
+								if float(Filtervar) == 1:
+									error_estimation = np.empty(len(mu_sam))
+									error_estimation.fill(np.std(mu_sam[int(-np.floor(len(mu_sam)/5)):]))
+									std_sam = error_estimation
+								else:
+									std_sam = (std_sam/normdivisor) * 1000 / len(std_sam)
+						if float(ProcessRefvar) == 1:
+							mu_ref = normalize_data(energy, mu_ref)
+							if errors_flag == True:
+								if float(Filtervar) == 1:
+									error_estimation = np.empty(len(mu_ref))
+									error_estimation.fill(np.std(mu_ref[int(-np.floor(len(mu_ref)/5)):]))
+									std_ref = error_estimation
+								else:
+									std_ref = (std_ref/normdivisor) * 1000 / len(std_ref)
+							
+					if (float(AutoAlignUsevar) == 1) & (float(NormUsevar) == 1) & (normalized == True) & (float(ProcessRefvar) == 1):
+						popt, pcov = curve_fit(cumgauss, energy, mu_ref, (float(e0), float(edgestepwidth)))
+						ec = float(edgestepvar) - popt[0]	
+						energy = energy + ec
+							
+					if float(InterpUsevar) == 1:
+						energy_input = energy
+						if float(ProcessSamvar) == 1:
+							energy, mu_sam = interpolate(energy_input, mu_sam, xnew)
+							if errors_flag == True:
+								energy, std_sam = interpolate(energy, std_sam, xnew)
+						if float(ProcessRefvar) == 1:
+							energy, mu_ref = interpolate(energy_input, mu_ref, xnew)
+							if errors_flag == True:
+								energy, std_ref = interpolate(energy, std_ref, xnew)
+						
+					#df = pd.DataFrame()
+					#df['E'] = energy
+					return_sam['E'] = energy
+					return_ref['E'] = energy
+					
+					if float(ProcessSamvar) == 1:
+						#df['mu_sam'] = mu_sam
+						return_sam[str(i)] = mu_sam
+						if errors_flag == True:
+							#df['std_sam'] = std_sam
+							return_sam['std_'+str(i)] = std_sam
+					if float(ProcessRefvar) == 1:
+						#df['mu_ref'] = mu_ref
+						return_ref[str(i)] = mu_ref
+						if errors_flag == True:
+							#df['std_ref'] = std_ref
+							return_ref['std_'+str(i)] = std_ref
+					#if 'qex' in file_type:
+					#	df['time'] = time_points
+					
+					#if updownvar == 0:
+					#	df.to_csv(folder+'/Export/Individual_Up/'+str(i)+'.dat', sep='\t', header=True, index=False)
+					#elif updownvar == 1:
+					#	df.to_csv(folder+'/Export/Individual_Down/'+str(i)+'.dat', sep='\t', header=True, index=False)
+					#else:
+					#	df.to_csv(folder+'/Export/Individual_Both/'+str(i)+'.dat', sep='\t', header=True, index=False)
+	
+				qs = q.qsize()
+				
+				print('Percent Complete:',str(100*(int(options[0])-qs)/int(options[0])))
+				if ID == 0:
+					tps = (time.time()-etd)/(int(options[0])-qs)
+					print('Time Per Spectrum (s):',round(tps, 4))
+					print('Estimated Time Remaining:',time.strftime("%H:%M:%S", time.gmtime(qs*tps)))
+				sys.stdout.flush()
 			
-			print('Percent Complete:',str(100*(int(options[0])-qs)/int(options[0])))
-			if ID == 0:
-				tps = (time.time()-etd)/(int(options[0])-qs)
-				print('Time Per Spectrum (s):',round(tps, 4))
-				print('Estimated Time Remaining:',time.strftime("%H:%M:%S", time.gmtime(qs*tps)))
-			sys.stdout.flush()
+			except:	
+				note = 'q empty ending'
 			
 		try:
 			test = energy

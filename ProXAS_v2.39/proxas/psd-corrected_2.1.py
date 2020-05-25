@@ -4,17 +4,18 @@ import matplotlib.pyplot as plt
 from scipy.integrate import simps
 import os
 
-folder = r'E:\ProXAS-2\output_Ir_L3_IrO2_WEpr1_CEpr1_RE13_1V_1pt6V_500cycles\Export'
-file = 'IrO2_WEpr1_CEpr1_RE13_1V_1pt6V_500cycles_sam_matrix_Up.dat'
+folder = r'E:\ProXAS-2\output_Ce_L3_Ce75Ga25O2_mdoulation_350_40s-2\Export'
+file = 'Ce75Ga25O2_mdoulation_350_40s-2_sam_matrix_Both_normalised_2.dat'
+
 import_data = pd.read_csv(folder+'/'+file, sep='\t', header=0)
 
-period = 100
+period = 40
 nphase = 25
 
-start_period = 140
-end_period = 150
+start_period = 10
+end_period = 999
 
-phase_delay = 50
+phase_delay = 0
 
 w = 2*np.pi/period
 max_n = 1
@@ -45,8 +46,8 @@ for j in range(int((max_n-1)/2)+1):
 
 	if j == 0:
 		for i in range(period+1):
-			columns = headers[(i+phase_delay)::(period+1)]
-			columns=list(columns[(columns >= (period+1)*start_period)&(columns <= (period+1)*end_period)])
+			columns = headers[np.int(i+(phase_delay))::(period)]
+			columns=list(columns[(columns >= ((period)*start_period)+phase_delay)&(columns < ((period)*(end_period+1))+phase_delay)])
 			columns = [str(i) for i in columns]
 			data_to_average = import_data[columns]
 			
@@ -60,6 +61,8 @@ for j in range(int((max_n-1)/2)+1):
 	chi_data = np.asarray(period_average.drop(['E'], axis=1).values)
 		
 	phiPSD_grid = np.linspace(0, 2*np.pi, nphase, endpoint=True)
+	phiPSD_grid = phiPSD_grid[0:-1]
+	
 	ft_out_1D = np.zeros(len(energy))
 			
 	ax=plt.subplot(111)
@@ -95,5 +98,5 @@ for j in range(int((max_n-1)/2)+1):
 	if not os.path.exists(folder+'/output_psd'):
 		os.makedirs(folder+'/output_psd')
 	
-	output_psd.to_csv(folder+'/output_psd/'+str(os.path.splitext(file)[0])+'_psd_n='+str(n)+'_s'+str(start_period)+'_e'+str(end_period)+'.dat', sep='\t', index=False)
-	period_average.to_csv(folder+'/output_psd/'+str(os.path.splitext(file)[0])+'_s'+str(start_period)+'_e'+str(end_period)+'_period_average.dat', sep='\t', index=False)
+	output_psd.to_csv(folder+'/output_psd/'+str(os.path.splitext(file)[0])+'_psd_n='+str(n)+'_s'+str(start_period)+'_e'+str(end_period)+'_pd'+str(phase_delay)+'.dat', sep='\t', index=False)
+	period_average.to_csv(folder+'/output_psd/'+str(os.path.splitext(file)[0])+'_s'+str(start_period)+'_e'+str(end_period)+'_period_average_pd'+str(phase_delay)+'.dat', sep='\t', index=False)

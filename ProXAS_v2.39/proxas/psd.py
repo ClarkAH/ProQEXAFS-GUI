@@ -3,17 +3,17 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import simps
 
-folder = r'E:\ProXAS-2\output_Fe_K_PtFe_Cell_Fe_K_edge_O2cut15cycles_110oC\Export'
-file = 'PtFe_Cell_Fe_K_edge_O2cut15cycles_110oC_sam_matrix_Both_normalised_2.dat'
+folder = r'F:\XAS\4th_beamtime_Fe_PtFe\output_Fe_K_PtFe_4_Tuesday_monday_catalyst_90_co_cut_cycles\Export'
+file = 'PtFe_4_Tuesday_monday_catalyst_90_co_cut_cycles_sam_matrix_Up_normalised_5_average_2_average_1_average_1.dat'
 import_data = pd.read_csv(folder+'/'+file, sep='\t', header=0)
 
-period = 240
+period = 60
 nphase = 25
-start_period = 3
+start_period = 0
 phase_delay = 0
 
 w = 2*np.pi/(period)
-n = 3
+n = 1
 
 headers = list(import_data.columns.values)
 
@@ -23,7 +23,7 @@ headers = [int(i) for i in headers]
 headers = np.asarray(headers)
 
 period_average = pd.DataFrame()
-period_average['E'] = import_data['Energy']
+period_average['E'] = import_data['E']
 
 plt.subplot(211)
 

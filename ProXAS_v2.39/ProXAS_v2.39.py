@@ -1,5 +1,4 @@
 import warnings
-import warnings
 warnings.filterwarnings("ignore",category=DeprecationWarning)
 warnings.simplefilter(action='ignore', category=FutureWarning)
 import numpy as np
@@ -11,7 +10,6 @@ import tkinter, time, os, psutil, subprocess, sys, shutil, ast, codecs, re, larc
 from tkinter.filedialog import askopenfile
 from tkinter import ttk
 from tkinter import END, MULTIPLE
-from scipy.signal import savgol_filter
 from matplotlib.widgets import Button
 import scipy.signal as signal
 from scipy.optimize import curve_fit
@@ -25,7 +23,6 @@ from scipy.signal import savgol_filter
 from matplotlib import gridspec
 import matplotlib.ticker as ticker
 from larch import ValidateLarchPlugin, parse_group_args
-from larch.utils import complex_phase
 from larch_plugins.xafs import set_xafsGroup
 from larch_plugins.xafs.cauchy_wavelet import cauchy_wavelet
 from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable
@@ -167,7 +164,7 @@ class DataExtract(tkinter.Frame):
 		numer = tkinter.Label(self.plotcolsFrame, text='Numerator',anchor='w')
 		numer.grid(column=0, row=1, columnspan=1, rowspan=1, sticky='W')
 		
-		denom = tkinter.Label(self.plotcolsFrame, text='Denomonator',anchor='w')
+		denom = tkinter.Label(self.plotcolsFrame, text='Denominator',anchor='w')
 		denom.grid(column=0, row=2, columnspan=1, rowspan=1, sticky='W')
 		
 		self.sam_numer = tkinter.StringVar(self.plotcolsFrame)
@@ -291,7 +288,7 @@ class DataExtract(tkinter.Frame):
 		
 		self.calibmono = tkinter.StringVar(self.CalibrationFrame)
 		self.calibmono.set('Si 111')
-		self.calibmonoMenu = tkinter.OptionMenu(self.CalibrationFrame, self.calibmono, 'Si 111', 'Si 311')
+		self.calibmonoMenu = tkinter.OptionMenu(self.CalibrationFrame, self.calibmono, 'Si 111', 'Si 111 LN', 'Si 311', 'Si 311 LN')
 		self.calibmonoMenu.grid(column=1, row=1, columnspan=1) 
 		
 		calibener = tkinter.Label(self.CalibrationFrame, text='Energy (eV)',anchor='w')
@@ -327,7 +324,7 @@ class DataExtract(tkinter.Frame):
 		self.BlackmanHarrisFiltervarCheck = tkinter.Checkbutton(self.CalibrationFrame, variable=self.BlackmanHarrisFiltervar)
 		self.BlackmanHarrisFiltervarCheck.grid(column=2, row=6)
 		
-		blackmanfilterwindowlabel = tkinter.Label(self.CalibrationFrame, text='Energy (eV)',anchor='w')
+		blackmanfilterwindowlabel = tkinter.Label(self.CalibrationFrame, text='Width',anchor='w')
 		blackmanfilterwindowlabel.grid(column=0, row=7, columnspan=1, rowspan=1, sticky='N')
 		self.blackmanfilterwindowvar = tkinter.DoubleVar()
 		self.blackmanfilterwindowvar.set(20)
@@ -418,7 +415,7 @@ class DataExtract(tkinter.Frame):
 		
 ################################################################################
 #Interpolation Frame
-		self.InterpolationFrame = tkinter.LabelFrame(master=self.f1, width=300, height=0.75*self.screen_height, pady=5, padx=76)
+		self.InterpolationFrame = tkinter.LabelFrame(master=self.f1, width=300, height=0.75*self.screen_height, pady=5, padx=64)
 		
 		Interpuselabel = tkinter.Label(self.InterpolationFrame, text='Use Interpolation',anchor='w')
 		Interpuselabel.grid(column=0, row=0, columnspan=2, rowspan=1, sticky='E') 
@@ -427,39 +424,39 @@ class DataExtract(tkinter.Frame):
 		self.InterpUseCheck = tkinter.Checkbutton(self.InterpolationFrame, variable=self.InterpUsevar, command=self.plot_update_trigger)
 		self.InterpUseCheck.grid(column=2, row=0)
 
-		Emin = tkinter.Label(self.InterpolationFrame, text='Emin',anchor='w')
+		Emin = tkinter.Label(self.InterpolationFrame, text='Emin (eV)',anchor='w')
 		Emin.grid(column=0, row=1, columnspan=1, rowspan=1, sticky='N')
 		self.eminvar = tkinter.DoubleVar()
 		self.eminentry = tkinter.Entry(self.InterpolationFrame, textvariable=self.eminvar)
 		self.eminentry.grid(column=1, row=1, columnspan=2)   
 		
-		EmaxXANES = tkinter.Label(self.InterpolationFrame, text='Emax XANES',anchor='w')
+		EmaxXANES = tkinter.Label(self.InterpolationFrame, text='Emax XANES (eV)',anchor='w')
 		EmaxXANES.grid(column=0, row=2, columnspan=1, rowspan=1, sticky='N')
 		self.emaxxanesvar = tkinter.DoubleVar()
 		self.emaxxanesentry = tkinter.Entry(self.InterpolationFrame, textvariable=self.emaxxanesvar)
 		self.emaxxanesentry.grid(column=1, row=2, columnspan=2)   
 		
-		EmaxEXAFS = tkinter.Label(self.InterpolationFrame, text='Emax EXAFS',anchor='w')
+		EmaxEXAFS = tkinter.Label(self.InterpolationFrame, text='Emax EXAFS (eV)',anchor='w')
 		EmaxEXAFS.grid(column=0, row=3, columnspan=1, rowspan=1, sticky='N')
 		self.emaxexafsvar = tkinter.DoubleVar()
 		self.emaxexafsentry = tkinter.Entry(self.InterpolationFrame, textvariable=self.emaxexafsvar)
 		self.emaxexafsentry.grid(column=1, row=3, columnspan=2)   
 		
-		Estep = tkinter.Label(self.InterpolationFrame, text='E Step',anchor='w')
+		Estep = tkinter.Label(self.InterpolationFrame, text='E Step (eV)',anchor='w')
 		Estep.grid(column=0, row=4, columnspan=1, rowspan=1, sticky='N')
 		self.estepvar = tkinter.DoubleVar()
 		self.estepvar.set(0.25)
 		self.estepentry = tkinter.Entry(self.InterpolationFrame, textvariable=self.estepvar)
 		self.estepentry.grid(column=1, row=4, columnspan=2)
 		
-		constkuselabel = tkinter.Label(self.InterpolationFrame, text='Use Constant K',anchor='w')
+		constkuselabel = tkinter.Label(self.InterpolationFrame, text='Use Constant k',anchor='w')
 		constkuselabel.grid(column=0, row=5, columnspan=2, rowspan=1, sticky='E') 
 		self.constkUsevar = tkinter.DoubleVar()
 		self.constkUsevar.set(1)
 		self.constkUseCheck = tkinter.Checkbutton(self.InterpolationFrame, variable=self.constkUsevar, command=self.plot_update_trigger)
 		self.constkUseCheck.grid(column=2, row=5)
 		
-		Kstep = tkinter.Label(self.InterpolationFrame, text='K Step',anchor='w')
+		Kstep = tkinter.Label(self.InterpolationFrame, text='k Step (A\u207B\u00B9)',anchor='w')
 		Kstep.grid(column=0, row=6, columnspan=1, rowspan=1, sticky='N')
 		self.kstepvar = tkinter.DoubleVar()
 		self.kstepvar.set(0.025)
@@ -489,10 +486,10 @@ class DataExtract(tkinter.Frame):
 		tkinter.Button(f2, text='Go to DataRead', command=lambda:raise_frame(self.f1)).grid(row=0, column=0)
 
 ################################################################################		
-		self.exportFrame = tkinter.LabelFrame(master=f2, width=300, height=0.75*self.screen_height, pady=5, padx=109)
+		self.exportFrame = tkinter.LabelFrame(master=f2, width=300, height=0.75*self.screen_height, pady=5, padx=90)
 		self.exportFrame.grid(row=1, column=0)
 		
-		toggle = [('',0),('',1)]
+		toggle = [('',0),('',1),('',2)]
 		self.radio_updown_buttons = []
 		self.updownvar = tkinter.IntVar()
 		self.updownvar.set(0)
@@ -507,6 +504,8 @@ class DataExtract(tkinter.Frame):
 		uplabel.grid(column=1, row=0, columnspan=1, rowspan=1, sticky='N')
 		downlabel = tkinter.Label(self.exportFrame, text='Down',anchor='w')
 		downlabel.grid(column=2, row=0, columnspan=1, rowspan=1, sticky='N')
+		bothlabel = tkinter.Label(self.exportFrame, text='Both',anchor='w')
+		bothlabel.grid(column=3, row=0, columnspan=1, rowspan=1, sticky='N')
 		
 		ProcessSamlabel = tkinter.Label(self.exportFrame, text='Export Sample',anchor='w')
 		ProcessSamlabel.grid(column=0, row=2, columnspan=2, rowspan=1, sticky='E') 
@@ -1089,6 +1088,11 @@ class DataExtract(tkinter.Frame):
 		
 		ang = data['encoder']
 		
+		if ang[0] > ang[-1]:
+			direction_flag = 0
+		else:
+			direction_flag = 1
+		
 		toggle = int(self.togglevar.get())
 		mu = np.zeros((minr, 1))
 		if toggle == 0:
@@ -1121,11 +1125,6 @@ class DataExtract(tkinter.Frame):
 		RawData['ang'] = np.around(ang, decimals=5)
 		RawData['mu'] = mu
 		
-		#print(str(self.sam_numer.get()))
-		#if int(self.sam_numer.get()) == 3:
-		#	a = np.array(RawData['mu'].values.tolist())
-		#	RawData['mu'] = np.where(a < 2.5, 0, a).tolist()
-		
 		RawData.dropna(how='any', inplace = True)
 		
 		RawData = RawData.groupby('ang', as_index=False).mean()
@@ -1135,12 +1134,12 @@ class DataExtract(tkinter.Frame):
 		
 		#RawData.columns = ['ang','mu','sem']
 		RawData = RawData[(RawData['ang'] >= np.float(self.min_ang)) & (RawData['ang'] <= np.float(self.max_ang))]
-		
+			
 		RawData.sort_values(by='ang', ascending=False)
 		RawData.reset_index(drop=True)
 		
 		#print(RawData.shape, np.min(RawData['ang']), np.max(RawData['ang']))
-		return np.around(RawData['ang'].values, decimals=6), RawData['mu'].values
+		return np.around(RawData['ang'].values, decimals=6), RawData['mu'].values, direction_flag
 		
 ################################################################################  
 	def data_read_bin(self, root_i, minr):
@@ -1159,6 +1158,11 @@ class DataExtract(tkinter.Frame):
 		f = open(encoder_bin+'.bin', 'rb')
 		f.seek(int(self.headerSize+(4*root)))
 		ang = np.around(np.fromfile(f, dtype='f4', count = int(minr)), decimals=5)
+		
+		if ang[0] > ang[-1]:
+			direction_flag = 0
+		else:
+			direction_flag = 1
 		
 		toggle = int(self.togglevar.get())
 		mu = np.zeros((minr, 1))
@@ -1192,10 +1196,10 @@ class DataExtract(tkinter.Frame):
 		RawData['ang'] = np.around(ang, decimals=5)
 		RawData['mu'] = mu
 		
-		print(str(self.sam_numer.get()))
-		if numervar == 'CH 3':
-			a = np.array(RawData['mu'].values.tolist())
-			RawData['mu'] = np.where(a < 2.5, 0, a).tolist()
+		if RawData['ang'].iloc[-1] < RawData['ang'].iloc[0]:
+			direction_flag = 1
+		else:
+			direction_flag = 0
 		
 		RawData.dropna(how='any', inplace = True)
 		
@@ -1210,7 +1214,7 @@ class DataExtract(tkinter.Frame):
 		RawData.sort_values(by='ang', ascending=False)
 		RawData.reset_index(drop=True)
 		
-		return np.around(RawData['ang'].values, decimals=5), RawData['mu'].values, RawData['sem'].values
+		return np.around(RawData['ang'].values, decimals=5), RawData['mu'].values, RawData['sem'].values, direction_flag
 		
 ################################################################################ 
 	def plot_add_line(self, x, y):
@@ -1253,15 +1257,12 @@ class DataExtract(tkinter.Frame):
 			
 			if '.bin' in self.file_type:
 				try:
-					ang,mu,std = self.data_read_bin(root_i, self.minr)
+					ang,mu,std,direction_flag = self.data_read_bin(root_i, self.minr)
 				except:
 					print('Please check column selection, unable to read selected columns')
 				
 			elif '.qex' in self.file_type:
-				try:
-					ang,mu = self.data_read_qex(root_i, self.minr)
-				except:
-					print('Please check column selection, unable to read selected columns')
+				ang,mu,direction_flag = self.data_read_qex(root_i, self.minr)
 			
 			if self.Filtervar.get() == 1:
 				#nyq = 0.5 * len(ang) * 2
@@ -1334,7 +1335,7 @@ class DataExtract(tkinter.Frame):
 							mu_raw = mu
 					if self.initialize_plot == 0:
 						self.initialize_plot = 1
-						self.update_figure(ang, mu_raw, 'Monochromator Angle', 'Absorption')
+						self.update_figure(ang, mu_raw, 'Monochromator Encoder Angle (°)', 'Absorption')
 						if self.Filtervar.get() == 1:
 							self.filter_line = self.plot_add_line(ang, mu)
 					else:
@@ -1344,6 +1345,22 @@ class DataExtract(tkinter.Frame):
 					self.canvas.draw_idle()
 				
 			if self.trigger == 1:
+				if direction_flag == 1:
+					try:
+						print('Changing to nearest Up direction spectrum')
+						if '.bin' in self.file_type:
+							ang,mu,std,direction_flag = self.data_read_bin(root_i+1, self.minr)
+						if '.qex' in self.file_type:
+							ang,mu,direction_flag = self.data_read_qex(root_i+1, self.minr)
+						self.ds_scroll_scale.set(root_i+1)
+					except:
+						print('Changing to nearest Up direction spectrum')
+						if '.bin' in self.file_type:
+							ang,mu,std,direction_flag = self.data_read_bin(root_i-1, self.minr)
+						if '.qex' in self.file_type:
+							ang,mu,direction_flag = self.data_read_qex(root_i-1, self.minr)
+						self.ds_scroll_scale.set(root_i-1)
+				
 				if self.CalibFiltervar.get() == 1:
 					self.Wn = float(self.bf_scroll_scale.get())
 					N  = 3    # Filter order
@@ -1351,7 +1368,7 @@ class DataExtract(tkinter.Frame):
 					mu = signal.filtfilt(self.B,self.A,mu)
 			
 				deriv_data = -np.gradient(mu)
-				self.update_figure(ang, deriv_data, 'Monochromator Angle', 'Absorption Derivative')
+				self.update_figure(ang, deriv_data, 'Monochromator Encoder Angle (°)', 'Absorption Derivative')
 				self.cp_scroll_scale.set(ang[np.argmax(deriv_data)])
 				self.calibline = self.ax.axvline(ang[np.argmax(deriv_data)], ls='--', c='orange')
 				self.ax.autoscale(axis='y', tight=False)
@@ -1576,7 +1593,7 @@ class DataExtract(tkinter.Frame):
 			#data_E = np.fromfile(f, dtype=self.dt, count = int(buffer))
 
 		options = [ncpus, np.max(buffer_points), self.headerSize, buffer, encoder_bin, self.nData, resample_factor, enconder_sampling, encoder_smooth, self.file_type]       
-		sub_f = 'batch_split_subroutine_v2.2.py'
+		sub_f = 'batch_split_subroutine_v2.4.py'
 		process = subprocess.Popen(['python', sub_f, str(options)], stdout=subprocess.PIPE, shell=True)
 
 		while process.poll() == None:
@@ -1689,11 +1706,19 @@ class DataExtract(tkinter.Frame):
 		
 		print(Ave)
 		
-		if self.root_test[0] < 0.95*Ave:
+		if self.root_test[0] < 0.98*Ave:
 			self.roots = np.delete(self.roots, 0)
 			self.angs = np.delete(self.angs, 0)
 			
-		if self.root_test[-1] < 0.95*Ave:
+		if self.root_test[-1] < 0.98*Ave:
+			self.roots = np.delete(self.roots, -1)
+			self.angs = np.delete(self.angs, -1)
+			
+		if self.root_test[0] > 2.5*Ave:
+			self.roots = np.delete(self.roots, 0)
+			self.angs = np.delete(self.angs, 0)
+			
+		if self.root_test[-1] > 2.5*Ave:
 			self.roots = np.delete(self.roots, -1)
 			self.angs = np.delete(self.angs, -1)
 			
@@ -1737,7 +1762,7 @@ class DataExtract(tkinter.Frame):
 #CALIBRATE			CHECK 2D VALUES
 ################################################################################		
 	def calibrate(self):
-		print('Calibrating')
+		print('Calibrating from nearest Up direction spectrum')
 		self.trigger = 1
 		
 		roots_file_data = pd.read_csv(self.folder+'/roots.dat', sep='\t', header=None).values
@@ -1748,6 +1773,12 @@ class DataExtract(tkinter.Frame):
 		elif self.calibmono.get() == 'Si 311':
 			self.twod.set(0.320267)
 			print('Mono Cyrstal = Si 311')
+		elif self.calibmono.get() == 'Si 111 LN':
+			self.twod.set(0.627182)
+			print('Mono Cyrstal = Si 111 LN')
+		elif self.calibmono.get() == 'Si 311 LN':
+			self.twod.set(0.320000)
+			print('Mono Cyrstal = Si 311 LN')
 			
 		self.calib_accept_button=tkinter.Button(self.CalibrationFrame, text='Accept', state='normal', width=14, command=self.accept_calib).grid(column=1, row=8, stick='E')
 		self.calib_cancel_button=tkinter.Button(self.CalibrationFrame, text='Cancel', state='normal', width=14, command=self.cancel_calib).grid(column=2, row=8, stick='W')
@@ -1941,11 +1972,20 @@ class DataExtract(tkinter.Frame):
 		self.normalized = self.normfile_check(self.folder)	
 		
 		if self.updownvar.get() == 0:
-			if not os.path.exists(self.folder+'/Export/Individual_Up'):
-				os.makedirs(self.folder+'/Export/Individual_Up')
+			#if not os.path.exists(self.folder+'/Export/Individual_Up'):
+			#	os.makedirs(self.folder+'/Export/Individual_Up')
+			if not os.path.exists(self.folder+'/Export/Merged_Up'):
+				os.makedirs(self.folder+'/Export/Merged_Up')
+		elif self.updownvar.get() == 1:
+			#if not os.path.exists(self.folder+'/Export/Individual_Down'):
+			#	os.makedirs(self.folder+'/Export/Individual_Down')	
+			if not os.path.exists(self.folder+'/Export/Merged_Down'):
+				os.makedirs(self.folder+'/Export/Merged_Down')
 		else:
-			if not os.path.exists(self.folder+'/Export/Individual_Down'):
-				os.makedirs(self.folder+'/Export/Individual_Down')
+			#if not os.path.exists(self.folder+'/Export/Individual_Both'):
+			#	os.makedirs(self.folder+'/Export/Individual_Both')
+			if not os.path.exists(self.folder+'/Export/Merged_Both'):
+				os.makedirs(self.folder+'/Export/Merged_Both')
 		
 		num_cpus = self.CPUNumvar.get()
 		print('number of processor cores available = ',num_cpus)
@@ -2031,8 +2071,9 @@ class DataExtract(tkinter.Frame):
 		if proceed_var == True:
 			self.update()
 			options=[int(len(self.calibroots)-5), self.data_file, self.folder, self.file_type, num_cpus, self.ProcessSamUsevar.get(), self.ProcessRefUsevar.get(), self.NormUsevar.get(), self.InterpUsevar.get(), self.AutoAlignUsevar.get(), self.edgestepvar.get(), self.Filtervar.get(), self.bf_scroll_scale.get(), self.eminvar.get(), self.emaxxanesvar.get(), self.emaxexafsvar.get(), self.constkUsevar.get(), self.kstepvar.get(), self.estepvar.get(), str(self.sam_numer.get()), str(self.sam_denom.get()), int(self.sam_logvar.get()), str(self.ref_numer.get()), str(self.ref_denom.get()), int(self.ref_logvar.get()), int(self.Flatvar.get()), self.updownvar.get(), self.edgestepwidth, self.BlackmanHarrisFiltervar.get(), self.blackmanfilterwindowvar.get()]
+			break_flag = False
 		   
-			sub_f = 'batch_extract_subroutine_v2.9.1.py'
+			sub_f = 'batch_extract_subroutine_v2.9.5.py'
 			start_loop = time.time()
 			process = subprocess.Popen(['python', sub_f, str(options)], stdout=subprocess.PIPE, shell=True)
 			
@@ -2050,13 +2091,24 @@ class DataExtract(tkinter.Frame):
 					self.tpstextvar.set(stdoutdata.decode('utf-8').split('\n')[0])
 				if 'Returning' in stdoutdata.decode('utf-8'):
 					self.progress_bar["value"] = 100
-					self.labelText.set('Finishing Up')
+					self.labelText.set('Finishing Up : Saving Partial Matricies')
+					time_to_wait = time.time() - start_loop + 15
 					self.progress_bar.update()
-				if 'Returned' in stdoutdata.decode('utf-8'):
-					self.progress_bar["value"] = 100
-					self.labelText.set('Forming Matrices')
-					self.progress_bar.update()
-					break
+					start_time_wait = time.time()
+					while time_to_wait > (time.time()-start_time_wait):
+						stdoutdata = process.stdout.readline()
+						if 'Returned' in stdoutdata.decode('utf-8'):
+							print('procs finished')
+							self.progress_bar["value"] = 100
+							self.labelText.set('Forming Matrices')
+							self.progress_bar.update()
+							break_flag = True
+							break
+						time.sleep(1)
+					if break_flag == False:
+						print('a process is badly behaving, terminating subprocess')
+						process.kill()
+						break
 				if 'ID' in stdoutdata.decode('utf-8'):
 					print(stdoutdata.decode('utf-8').split('\n')[0])
 				#print(stdoutdata.decode('utf-8').split('\n')[0])
@@ -2079,39 +2131,81 @@ class DataExtract(tkinter.Frame):
 			if '.bin' in self.file_type:
 				df_ref_error = pd.DataFrame()
 		
-		for i in range(int(len(self.calibroots)-5)):
-			try:
-				if self.updownvar.get() == 0:
-					data_read = pd.read_csv(self.folder+'/Export/Individual_Up/'+str(int(i))+'.dat', sep = '\t', header=0)
-				if self.updownvar.get() == 1:
-					data_read = pd.read_csv(self.folder+'/Export/Individual_Down/'+str(int(i))+'.dat', sep = '\t', header=0)
+		#for i in range(int(len(self.calibroots)-5)):
+		#	try:
+		#		if self.updownvar.get() == 0:
+		#			data_read = pd.read_csv(self.folder+'/Export/Individual_Up/'+str(int(i))+'.dat', sep = '\t', header=0)
+		#		if self.updownvar.get() == 1:
+		#			data_read = pd.read_csv(self.folder+'/Export/Individual_Down/'+str(int(i))+'.dat', sep = '\t', header=0)
+		#		if self.updownvar.get() == 2:
+		#			data_read = pd.read_csv(self.folder+'/Export/Individual_Both/'+str(int(i))+'.dat', sep = '\t', header=0)
+		#		if self.ProcessSamUsevar.get() == 1:
+		#			df_sam[str(i)] = data_read['mu_sam']
+		#			#if '.bin' in self.file_type:
+		#			#	df_sam_error[str(i)] = data_read['std_sam']
+		#		if self.ProcessRefUsevar.get() == 1:
+		#			df_ref[str(i)] = data_read['mu_ref']
+		#			#if '.bin' in self.file_type:
+		#			#	df_ref_error[str(i)] = data_read['std_ref']
+		#		i = i+1
+		#	except:
+		#		none_vals.append(i)
+		#		i = i+1
+		for i in range(num_cpus):
+			if self.updownvar.get() == 0:
 				if self.ProcessSamUsevar.get() == 1:
-					df_sam[str(i)] = data_read['mu_sam']
-					#if '.bin' in self.file_type:
-					#	df_sam_error[str(i)] = data_read['std_sam']
+					data_read_sample = pd.read_csv(self.folder+'/Export/Merged_Up/sample_'+str(int(i))+'.dat', sep = '\t', header=0)
 				if self.ProcessRefUsevar.get() == 1:
-					df_ref[str(i)] = data_read['mu_ref']
-					#if '.bin' in self.file_type:
-					#	df_ref_error[str(i)] = data_read['std_ref']
-				i = i+1
-			except:
-				none_vals.append(i)
-				i = i+1
-			self.progress_bar["value"] = 100*(i+1)/(len(self.calibroots)-5)
+					data_read_reference = pd.read_csv(self.folder+'/Export/Merged_Up/reference_'+str(int(i))+'.dat', sep = '\t', header=0)
+			if self.updownvar.get() == 1:
+				if self.ProcessSamUsevar.get() == 1:
+					data_read_sample = pd.read_csv(self.folder+'/Export/Merged_Down/sample_'+str(int(i))+'.dat', sep = '\t', header=0)
+				if self.ProcessRefUsevar.get() == 1:
+					data_read_reference = pd.read_csv(self.folder+'/Export/Merged_Down/reference_'+str(int(i))+'.dat', sep = '\t', header=0)
+			if self.updownvar.get() == 2:
+				if self.ProcessSamUsevar.get() == 1:
+					data_read_sample = pd.read_csv(self.folder+'/Export/Merged_Both/sample_'+str(int(i))+'.dat', sep = '\t', header=0)
+				if self.ProcessRefUsevar.get() == 1:
+					data_read_reference = pd.read_csv(self.folder+'/Export/Merged_Both/reference_'+str(int(i))+'.dat', sep = '\t', header=0)
+			if i == 0:
+				if self.ProcessSamUsevar.get() == 1:
+					E_axis = data_read_sample['E']
+				elif self.ProcessRefUsevar.get() == 1:
+					E_axis = data_read_reference['E']
+				
+			if self.ProcessSamUsevar.get() == 1:
+				data_read_sample.drop(columns=['E'], inplace=True)
+				df_sam = pd.concat([df_sam, data_read_sample], axis=1, sort=False)
+			if self.ProcessRefUsevar.get() == 1:
+				data_read_reference.drop(columns=['E'], inplace=True)
+				df_ref = pd.concat([df_ref, data_read_reference], axis=1, sort=False)
+		
+			self.progress_bar["value"] = 100*(i+1)/num_cpus
 			self.progress_bar.update() 
 			self.update()
+		if self.ProcessSamUsevar.get() == 1:	
+			x = [str(i) for i in sorted(df_sam.columns.astype(int))]
+			df_sam = df_sam[x]
+			df_sam = df_sam.loc[:,~df_sam.columns.duplicated()]
+			df_sam.insert(0, 'E', E_axis)
+		if self.ProcessRefUsevar.get() == 1:
+			x = [str(i) for i in sorted(df_ref.columns.astype(int))]
+			df_ref = df_ref[x]
+			df_ref = df_ref.loc[:,~df_ref.columns.duplicated()]
+			df_ref.insert(0, 'E', E_axis)
 		
-		self.labelText.set('Saving Matrices')
+		self.labelText.set('Saving Matrices : Can take time')
 		self.update()		
 		
 		if int(self.updownvar.get()) == 0:
 			updownstring = 'Up'
-		else:
+		elif int(self.updownvar.get()) == 1:
 			updownstring = 'Down'
+		else:
+			updownstring = 'Both'
 		
 		try:
 			if self.ProcessSamUsevar.get() == 1:
-				df_sam.insert(0, 'E', data_read['E'])
 				df_sam.to_csv(self.folder+'/Export/'+self.data_file.split('/')[-1]+'_sam_matrix_'+updownstring+'.dat', sep='\t', index=False)
 				#if '.bin' in self.file_type:
 				#	df_sam_error.insert(0, 'E', data_read['E'])
@@ -2122,7 +2216,6 @@ class DataExtract(tkinter.Frame):
 		
 		try:            
 			if self.ProcessRefUsevar.get() == 1:
-				df_ref.insert(0, 'E', data_read['E'])
 				df_ref.to_csv(self.folder+'/Export/'+self.data_file.split('/')[-1]+'_ref_matrix_'+updownstring+'.dat', sep='\t', index=False)
 				#if '.bin' in self.file_type:
 				#	df_ref_error.insert(0, 'E', data_read['E'])
@@ -2177,8 +2270,8 @@ class DataExtract(tkinter.Frame):
 			if self.constkUsevar.get() == 1:	
 				outf.write('Kstep '+str(self.kstepvar.get())+'\n')
 			outf.write('Emin '+str(self.eminvar.get())+'\n')
-			outf.write('Emax XANES '+str(self.emaxxanesvar.get())+'\n')
-			outf.write('Emax EXAFS '+str(self.emaxexafsvar.get())+'\n')
+			outf.write('Emax XANES (eV) '+str(self.emaxxanesvar.get())+'\n')
+			outf.write('Emax EXAFS (eV) '+str(self.emaxexafsvar.get())+'\n')
 			outf.write('\n')
 		if self.Filtervar.get() == 1:
 			outf.write('Processed Using Butterworth Noise Filtering'+'\n')
@@ -2326,7 +2419,7 @@ class PostProcess(tkinter.Frame):
 
 ################################################################################
 #Average Frame		
-		self.AverageFrame = tkinter.LabelFrame(master=self.f1, width=300, height=0.75*self.screen_height, pady=5, padx=65)
+		self.AverageFrame = tkinter.LabelFrame(master=self.f1, width=300, height=0.75*self.screen_height, pady=5, padx=73)
 		self.AverageFrame.grid(row=1, column=0) 
 		
 		averageuselabel = tkinter.Label(self.AverageFrame, text='Use Averaged Data',anchor='w')
@@ -2355,20 +2448,17 @@ class PostProcess(tkinter.Frame):
 		self.nendentry = tkinter.Entry(self.AverageFrame, textvariable=self.nendvar)
 		self.nendentry.grid(column=2, row=4, columnspan=1)  		
 		
-		Estart = tkinter.Label(self.AverageFrame, text='Emin',anchor='w')
+		Estart = tkinter.Label(self.AverageFrame, text='Emin (eV)',anchor='w')
 		Estart.grid(column=0, row=5, columnspan=2, rowspan=1, sticky='N')
-		self.estartvar = tkinter.DoubleVar()
+		self.estartvar = tkinter.StringVar()
 		self.estartentry = tkinter.Entry(self.AverageFrame, textvariable=self.estartvar)
 		self.estartentry.grid(column=2, row=5, columnspan=1)  	
 		
-		Eend = tkinter.Label(self.AverageFrame, text='Emax',anchor='w')
+		Eend = tkinter.Label(self.AverageFrame, text='Emax (eV)',anchor='w')
 		Eend.grid(column=0, row=6, columnspan=2, rowspan=1, sticky='N')
-		self.eendvar = tkinter.DoubleVar()
+		self.eendvar = tkinter.StringVar()
 		self.eendentry = tkinter.Entry(self.AverageFrame, textvariable=self.eendvar)
 		self.eendentry.grid(column=2, row=6, columnspan=1)  	
-		
-		self.estartvar.set(0)
-		self.eendvar.set(0)
 		
 		self.buttonaverage= tkinter.Button(self.AverageFrame, text='Average', width=30, height=1, command=self.average_trigger)
 		self.buttonaverage.grid(column=0, row=7, columnspan=3, rowspan=1)	
@@ -2478,7 +2568,7 @@ class PostProcess(tkinter.Frame):
 	
 ################################################################################
 #Time Filter Frame		
-		self.TimeFrame = tkinter.LabelFrame(master=self.f1, width=300, height=0.75*self.screen_height, pady=5, padx=67)
+		self.TimeFrame = tkinter.LabelFrame(master=self.f1, width=300, height=0.75*self.screen_height, pady=5, padx=75)
 		self.TimeFrame.grid(row=2, column=0) 
 		
 		timefilteruselabel = tkinter.Label(self.TimeFrame, text='Use Time Filtering',anchor='w')
@@ -2504,7 +2594,7 @@ class PostProcess(tkinter.Frame):
 		
 ################################################################################
 #Region Exclude		
-		self.CutFrame = tkinter.LabelFrame(master=self.f1, width=300, height=0.75*self.screen_height, pady=5, padx=70)
+		self.CutFrame = tkinter.LabelFrame(master=self.f1, width=300, height=0.75*self.screen_height, pady=5, padx=77)
 		self.CutFrame.grid(row=3, column=0) 
 		
 		cutuselabel = tkinter.Label(self.CutFrame, text='Exclude Region',anchor='w')
@@ -2514,13 +2604,13 @@ class PostProcess(tkinter.Frame):
 		self.cutusevarCheck = tkinter.Checkbutton(self.CutFrame, variable=self.cutusevar, command=self.plot_update_trigger)
 		self.cutusevarCheck.grid(column=2, row=1)
 		
-		eminlabel = tkinter.Label(self.CutFrame, text='Emin',anchor='w')
+		eminlabel = tkinter.Label(self.CutFrame, text='Emin (eV)',anchor='w')
 		eminlabel.grid(column=0, row=2, columnspan=1, rowspan=1, sticky='E') 
 		self.emin_entry = tkinter.DoubleVar()
 		self.emin_entry_box = tkinter.Entry(self.CutFrame, textvariable=self.emin_entry, state='normal')
 		self.emin_entry_box.grid(column=1, columnspan=1, row=2, stick='EW')
 		
-		emaxlabel = tkinter.Label(self.CutFrame, text='Emax',anchor='w')
+		emaxlabel = tkinter.Label(self.CutFrame, text='Emax (eV)',anchor='w')
 		emaxlabel.grid(column=0, row=3, columnspan=1, rowspan=1, sticky='E') 
 		self.emax_entry = tkinter.DoubleVar()
 		self.emax_entry_box = tkinter.Entry(self.CutFrame, textvariable=self.emax_entry, state='normal')
@@ -2681,6 +2771,7 @@ class PostProcess(tkinter.Frame):
 					
 				if self.normalised == 1:
 					self.NormalisationFrame_invisible()
+					self.NormUsevar.set(0)
 	
 				if (self.normalised == 0):
 					self.NormalisationFrame_visible()
@@ -2700,12 +2791,21 @@ class PostProcess(tkinter.Frame):
 			idxs = list(map(lambda x: x - 1, idxs))
 		
 		if len(self.nstartvar.get()) > 0:
-			idxs = list(np.asarray(idxs)[(np.asarray(idxs) >= 2*float(self.nstartvar.get()))])
-			print('Using requested start dataset for averaging')
-			startval = True
+			if int(idxs[1]) - int(idxs[0]) == 2:
+				idxs = list(np.asarray(idxs)[(np.asarray(idxs) >= 2*float(self.nstartvar.get()))])
+				print('Using requested start dataset for averaging')
+				startval = True
+			else:
+				idxs = list(np.asarray(idxs)[(np.asarray(idxs) >= float(self.nstartvar.get()))])
+				print('Using requested start dataset for averaging')
+				startval = True
 		if len(self.nendvar.get()) > 0:
-			idxs = list(np.asarray(idxs)[(np.asarray(idxs) <= 2*float(self.nendvar.get()))])
-			print('Using requested end dataset for averaging')
+			if int(idxs[1]) - int(idxs[0]) == 2:
+				idxs = list(np.asarray(idxs)[(np.asarray(idxs) <= 2*float(self.nendvar.get()))])
+				print('Using requested end dataset for averaging')
+			else:
+				idxs = list(np.asarray(idxs)[(np.asarray(idxs) <= float(self.nendvar.get()))])
+				print('Using requested end dataset for averaging')
 			
 		if self.nsumvar.get() == 'all':
 			if int(idxs[1]) - int(idxs[0]) == 2:
@@ -2731,11 +2831,15 @@ class PostProcess(tkinter.Frame):
 			print('Number of Averaged Spectra =',Nave)
 			for j in range(int(Nave)):
 				if startval == True:
-					idx = int(self.nstartvar.get()) + npi.indices(np.asarray(idxs), np.asarray(idxs)[(np.asarray(idxs) >= ((j*Nsum)+2*int(self.nstartvar.get()))) & (np.asarray(idxs) < ((j*Nsum)+Nsum+2*int(self.nstartvar.get())))])
-					print(j, idx)
+					if int(idxs[1]) - int(idxs[0]) == 2:
+						idx = int(self.nstartvar.get()) + npi.indices(np.asarray(idxs), np.asarray(idxs)[(np.asarray(idxs) >= ((j*Nsum)+2*int(self.nstartvar.get()))) & (np.asarray(idxs) < ((j*Nsum)+Nsum+2*int(self.nstartvar.get())))])
+						#print(j, idx)
+					else:
+						idx = int(self.nstartvar.get()) + npi.indices(np.asarray(idxs), np.asarray(idxs)[(np.asarray(idxs) >= ((j*Nsum)+int(self.nstartvar.get()))) & (np.asarray(idxs) < ((j*Nsum)+Nsum+int(self.nstartvar.get())))])
+						#print(j, idx)
 				else:
 					idx = npi.indices(np.asarray(idxs), np.asarray(idxs)[(np.asarray(idxs) >= (j*Nsum)) & (np.asarray(idxs) < (j*Nsum)+Nsum)])
-					print(j, idx)
+					#print(j, idx)
 				if len(idx) > 0:
 					self.data_sum[str(j)] = (self.data.iloc[:,idx+1]).mean(axis=1)
 					if self.errors_flag == True:
@@ -2772,8 +2876,8 @@ class PostProcess(tkinter.Frame):
 				self.data_sum_error.insert(0, 'E', self.data['E'])	
 				
 			print(self.estartvar.get(), self.eendvar.get())
-			if (self.estartvar.get() > 0) and (self.eendvar.get() > 0) and (self.eendvar.get() > self.estartvar.get()) and (self.estartvar.get() < np.max(self.data['E'].values)):
-				self.data_sum = self.data_sum[(self.data_sum['E'] >= self.estartvar.get()) & (self.data_sum['E'] <= self.eendvar.get())]
+			if (len(self.estartvar.get()) > 0) and (len(self.eendvar.get()) > 0) and (float(self.eendvar.get()) > float(self.estartvar.get())) and (float(self.estartvar.get()) < np.max(self.data['E'].values)):
+				self.data_sum = self.data_sum[(self.data_sum['E'] >= float(self.estartvar.get())) & (self.data_sum['E'] <= float(self.eendvar.get()))]
 			
 			self.column_names_sum = self.data_sum.columns.values.tolist()
 			self.progress_bar["value"] = 0
@@ -2899,8 +3003,8 @@ class PostProcess(tkinter.Frame):
 					self.line_post = self.plot_add_line(self.data_x, linepost_y)
 			
 				if self.cutusevar.get() != 1:
-					index = min(range(len(self.data_x)), key=lambda i: abs(self.data_x[i]-self.e0_scroll_scale.get()))
-					self.edge_jump = np.around((linepost_y-linepre_y)[index], decimals=2)
+					index = np.argmin(np.abs(np.asarray(self.data_x) - float(self.e0_scroll_scale.get())))
+					self.edge_jump = np.around((linepost_y-linepre_y)[index], decimals=3)
 					self.evjlabel.set(str(self.edge_jump))
 								
 				self.plot_add_markerlines()
@@ -2919,10 +3023,10 @@ class PostProcess(tkinter.Frame):
 		if self.trigger == 2:		
 			def scroll_bar_update(*args):
 
-				self.pre1_scroll_scale = tkinter.Scale(self.NormalisationFrame, orient='horizontal', from_=np.min(self.data_x)-self.e0_scroll_scale.get()+5, to=0, state='normal', digits=4, resolution=0.1, length=125, command=plot_data)
-				self.pre2_scroll_scale = tkinter.Scale(self.NormalisationFrame, orient='horizontal', from_=np.min(self.data_x)-self.e0_scroll_scale.get()+5, to=0, state='normal', digits=4, resolution=0.1, length=125, command=plot_data)
-				self.post1_scroll_scale = tkinter.Scale(self.NormalisationFrame, orient='horizontal', from_=0, to=np.max(self.data_x)-self.e0_scroll_scale.get()-10, state='normal', digits=4, resolution=0.1, length=125, command=plot_data)
-				self.post2_scroll_scale = tkinter.Scale(self.NormalisationFrame, orient='horizontal', from_=0, to=np.max(self.data_x)-self.e0_scroll_scale.get()-10, state='normal', resolution=0.1, length=125, command=plot_data)
+				self.pre1_scroll_scale = tkinter.Scale(self.NormalisationFrame, orient='horizontal', from_=np.min(self.data_x)-self.e0_scroll_scale.get(), to=0, state='normal', digits=4, resolution=0.1, length=125, command=plot_data)
+				self.pre2_scroll_scale = tkinter.Scale(self.NormalisationFrame, orient='horizontal', from_=np.min(self.data_x)-self.e0_scroll_scale.get(), to=0, state='normal', digits=4, resolution=0.1, length=125, command=plot_data)
+				self.post1_scroll_scale = tkinter.Scale(self.NormalisationFrame, orient='horizontal', from_=0, to=np.max(self.data_x)-self.e0_scroll_scale.get(), state='normal', digits=4, resolution=0.1, length=125, command=plot_data)
+				self.post2_scroll_scale = tkinter.Scale(self.NormalisationFrame, orient='horizontal', from_=0, to=np.max(self.data_x)-self.e0_scroll_scale.get(), state='normal', resolution=0.1, length=125, command=plot_data)
 				self.e0_entry = tkinter.Entry(self.NormalisationFrame, textvariable=self.e0_scroll_scale, state='normal')
 				self.update()
 				
@@ -3103,11 +3207,11 @@ class PostProcess(tkinter.Frame):
 					self.data_y = self.normalize_data(np.asarray(self.data_x), np.asarray(self.data_y))
 				
 				if i == 0:
-					self.export['Energy'] = self.data_x
+					self.export['E'] = self.data_x
 				
 				self.export[str(i)] = self.data_y
 				
-			self.export = self.export[(self.export['Energy'] >= np.float(self.emin_entry.get())) & (self.export['Energy'] <= np.float(self.emax_entry.get()))]
+			self.export = self.export[(self.export['E'] >= np.float(self.emin_entry.get())) & (self.export['E'] <= np.float(self.emax_entry.get()))]
 	
 			if self.NormUsevar.get() == 0:
 				self.export.to_csv(self.folder+'/'+os.path.splitext(self.data_file)[0]+'_cut.dat', sep='\t', index=False)
@@ -3151,9 +3255,9 @@ class PostProcess(tkinter.Frame):
 					self.data_y_error = self.data_y_error * self.edge_jump
 				
 				if i == 0:
-					self.norm_export['Energy'] = self.data_x
+					self.norm_export['E'] = self.data_x
 					if self.errors_flag == True:
-						self.norm_export_errors['Energy'] = self.data_x
+						self.norm_export_errors['E'] = self.data_x
 				
 				self.norm_export[str(i)] = self.data_y
 				if self.errors_flag == True:
@@ -3238,13 +3342,13 @@ class PostProcess(tkinter.Frame):
 				
 		if self.interpolated == 1:
 			if self.mcrnormvar.get() == 1:
-				#self.norm_export.drop(self.norm_export[self.norm_expot['Energy'] > float(self.emax_xanes)].index, inplace=True)
-				self.norm_export.drop(self.norm_export[self.norm_export['Energy'] >= self.emax_mcr.get()].index, inplace=True)
-				self.norm_export.drop(self.norm_export[self.norm_export['Energy'] <= self.emin_mcr.get()].index, inplace=True)
-				mcr_energy = self.norm_export['Energy']
+				#self.norm_export.drop(self.norm_export[self.norm_expot['E'] > float(self.emax_xanes)].index, inplace=True)
+				self.norm_export.drop(self.norm_export[self.norm_export['E'] >= self.emax_mcr.get()].index, inplace=True)
+				self.norm_export.drop(self.norm_export[self.norm_export['E'] <= self.emin_mcr.get()].index, inplace=True)
+				mcr_energy = self.norm_export['E']
 				mcr_energy = np.round(mcr_energy,decimals=5)
 				mcr_energy.to_csv(self.folder+'/mcr_energy.dat', sep='\t', index=False, header=None)
-				self.norm_export.drop(columns=['Energy'], inplace=True)
+				self.norm_export.drop(columns=['E'], inplace=True)
 				self.norm_export = self.norm_export.T
 				if self.AverageUsevar.get() == 1:
 					self.norm_export.to_csv(self.folder+'/'+os.path.splitext(self.data_file)[0]+'_normalised_'+str(self.nsumvar.get())+'_mcr.dat', sep='\t',  index=False, header=None)
@@ -3382,7 +3486,7 @@ class FourierTransform(tkinter.Frame):
 		self.kwback = tkinter.IntVar(self.xasbackFrame)
 		self.kwbackMenu = tkinter.OptionMenu(self.xasbackFrame, self.kwback, *self.kwbackchoices)
 		self.kwbackMenu.grid(column=1, row=0, columnspan=1) 
-		self.kwbacklabel = tkinter.Label(self.xasbackFrame, text='Kw',anchor='w')		
+		self.kwbacklabel = tkinter.Label(self.xasbackFrame, text='k weight',anchor='w')		
 		self.kwbacklabel.grid(column=0, row=0, columnspan=1, rowspan=1, sticky='S')
 
 		self.lclamp_scroll_scale = tkinter.Scale(self.xasbackFrame, orient='horizontal', from_=0, to=50, state='normal', width=18)
@@ -3402,7 +3506,7 @@ class FourierTransform(tkinter.Frame):
 		
 		self.e0_scroll_scale = tkinter.Scale(self.xasbackFrame, orient='horizontal', from_=0, to=1, state='normal', width=18)
 		self.e0_scroll_scale.grid(column=1, columnspan=1, row=4, stick='EW')
-		self.e0label = tkinter.Label(self.xasbackFrame, text='E0',anchor='w')
+		self.e0label = tkinter.Label(self.xasbackFrame, text='E0 (eV)',anchor='w')
 		self.e0label.grid(column=0, row=4, columnspan=1, rowspan=1, sticky='S')
 			
 		self.lclamp_scroll_scale.set(10)
@@ -3426,22 +3530,22 @@ class FourierTransform(tkinter.Frame):
 		self.kwft = tkinter.IntVar(self.FTFrame)
 		self.kwftMenu = tkinter.OptionMenu(self.FTFrame, self.kwft, *self.kwftchoices)
 		self.kwftMenu.grid(column=1, row=0, columnspan=1)
-		self.kwftlabel = tkinter.Label(self.FTFrame, text='Kw',anchor='w')		
+		self.kwftlabel = tkinter.Label(self.FTFrame, text='k weight',anchor='w')		
 		self.kwftlabel.grid(column=0, row=0, columnspan=1, rowspan=1, sticky='S')
 
 		self.kmin_scroll_scale = tkinter.Scale(self.FTFrame, orient='horizontal', from_=0, to=15, state='normal', width=18)
 		self.kmin_scroll_scale.grid(column=1, columnspan=1, row=1, stick='EW')
-		self.kminlabel = tkinter.Label(self.FTFrame, text='K min',anchor='w')
+		self.kminlabel = tkinter.Label(self.FTFrame, text='k min (A\u207B\u00B9)',anchor='w')
 		self.kminlabel.grid(column=0, row=1, columnspan=1, rowspan=1, sticky='S')
 		
 		self.kmax_scroll_scale = tkinter.Scale(self.FTFrame, orient='horizontal', from_=0, to=15, state='normal', width=18)
 		self.kmax_scroll_scale.grid(column=1, columnspan=1, row=2, stick='EW')
-		self.kmaxlabel = tkinter.Label(self.FTFrame, text='K max',anchor='w')
+		self.kmaxlabel = tkinter.Label(self.FTFrame, text='k max (A\u207B\u00B9)',anchor='w')
 		self.kmaxlabel.grid(column=0, row=2, columnspan=1, rowspan=1, sticky='S')
 		
 		self.dk_scroll_scale = tkinter.Scale(self.FTFrame, orient='horizontal', from_=0, to=4, state='normal', width=18)
 		self.dk_scroll_scale.grid(column=1, columnspan=1, row=3, stick='EW')
-		self.dklabel = tkinter.Label(self.FTFrame, text='dK',anchor='w')
+		self.dklabel = tkinter.Label(self.FTFrame, text='dk (A\u207B\u00B9)',anchor='w')
 		self.dklabel.grid(column=0, row=3, columnspan=1, rowspan=1, sticky='S')
 		
 		self.label2 = tkinter.Label(self.FTFrame, text='',anchor='w').grid(column=0, row=4, columnspan=1, rowspan=1, sticky='S')
@@ -3462,17 +3566,17 @@ class FourierTransform(tkinter.Frame):
 
 		self.rmin_scroll_scale = tkinter.Scale(self.BFTFrame, orient='horizontal', from_=0, to=10, state='normal', width=18)
 		self.rmin_scroll_scale.grid(column=1, columnspan=1, row=0, stick='EW')
-		self.rminlabel = tkinter.Label(self.BFTFrame, text='R min',anchor='w')
+		self.rminlabel = tkinter.Label(self.BFTFrame, text='R min (A)',anchor='w')
 		self.rminlabel.grid(column=0, row=0, columnspan=1, rowspan=1, sticky='S')
 		
 		self.rmax_scroll_scale = tkinter.Scale(self.BFTFrame, orient='horizontal', from_=0, to=10, state='normal', width=18)
 		self.rmax_scroll_scale.grid(column=1, columnspan=1, row=1, stick='EW')
-		self.rmaxlabel = tkinter.Label(self.BFTFrame, text='R max',anchor='w')
+		self.rmaxlabel = tkinter.Label(self.BFTFrame, text='R max (A)',anchor='w')
 		self.rmaxlabel.grid(column=0, row=1, columnspan=1, rowspan=1, sticky='S')
 		
 		self.dR_scroll_scale = tkinter.Scale(self.BFTFrame, orient='horizontal', from_=0, to=4, state='normal', width=18)
 		self.dR_scroll_scale.grid(column=1, columnspan=1, row=2, stick='EW')
-		self.dRlabel = tkinter.Label(self.BFTFrame, text='dR',anchor='w')
+		self.dRlabel = tkinter.Label(self.BFTFrame, text='dR (A)',anchor='w')
 		self.dRlabel.grid(column=0, row=2, columnspan=1, rowspan=1, sticky='S')
 		
 		self.label2 = tkinter.Label(self.BFTFrame, text='',anchor='w').grid(column=0, row=3, columnspan=1, rowspan=1, sticky='S')
@@ -3785,7 +3889,7 @@ class FourierTransform(tkinter.Frame):
 				self.kwback = tkinter.IntVar(self.xasbackFrame)
 				self.kwbackMenu = tkinter.OptionMenu(self.xasbackFrame, self.kwback, *self.kwbackchoices, command=plot_data)
 				self.kwbackMenu.grid(column=1, row=0, columnspan=1) 
-				self.kwbacklabel = tkinter.Label(self.xasbackFrame, text='Kw',anchor='w')		
+				self.kwbacklabel = tkinter.Label(self.xasbackFrame, text='k weight',anchor='w')		
 				self.kwbacklabel.grid(column=0, row=0, columnspan=1, rowspan=1, sticky='S')
 		
 				self.lclamp_scroll_scale = tkinter.Scale(self.xasbackFrame, orient='horizontal', from_=0, to=50, state='normal', width=18, command=plot_data)
@@ -3805,7 +3909,7 @@ class FourierTransform(tkinter.Frame):
 				
 				self.e0_scroll_scale = tkinter.Scale(self.xasbackFrame, orient='horizontal', from_=larch_data.e0-20, to=larch_data.e0+20, digits = 6, resolution = 0.01, state='normal', width=18, command=plot_data)
 				self.e0_scroll_scale.grid(column=1, columnspan=1, row=4, stick='EW')
-				self.e0label = tkinter.Label(self.xasbackFrame, text='E0',anchor='w')
+				self.e0label = tkinter.Label(self.xasbackFrame, text='E0 (eV)',anchor='w')
 				self.e0label.grid(column=0, row=4, columnspan=1, rowspan=1, sticky='S')
 				
 				self.lclamp_scroll_scale.set(10)
@@ -3817,22 +3921,22 @@ class FourierTransform(tkinter.Frame):
 				self.kwft = tkinter.IntVar(self.FTFrame)
 				self.kwftMenu = tkinter.OptionMenu(self.FTFrame, self.kwft, *self.kwftchoices, command=plot_data)
 				self.kwftMenu.grid(column=1, row=0, columnspan=1)
-				self.kwftlabel = tkinter.Label(self.FTFrame, text='Kw',anchor='w')		
+				self.kwftlabel = tkinter.Label(self.FTFrame, text='k weight',anchor='w')		
 				self.kwftlabel.grid(column=0, row=0, columnspan=1, rowspan=1, sticky='S')
 		
 				self.kmin_scroll_scale = tkinter.Scale(self.FTFrame, orient='horizontal', from_=0, to=np.max(larch_data.k), digits = 4, resolution = 0.01, state='normal', width=18, command=plot_data)
 				self.kmin_scroll_scale.grid(column=1, columnspan=1, row=1, stick='EW')
-				self.kminlabel = tkinter.Label(self.FTFrame, text='K min',anchor='w')
+				self.kminlabel = tkinter.Label(self.FTFrame, text='k min (A\u207B\u00B9)',anchor='w')
 				self.kminlabel.grid(column=0, row=1, columnspan=1, rowspan=1, sticky='S')
 				
 				self.kmax_scroll_scale = tkinter.Scale(self.FTFrame, orient='horizontal', from_=0, to=np.max(larch_data.k), digits = 4, resolution = 0.01, state='normal', width=18, command=plot_data)
 				self.kmax_scroll_scale.grid(column=1, columnspan=1, row=2, stick='EW')
-				self.kmaxlabel = tkinter.Label(self.FTFrame, text='K max',anchor='w')
+				self.kmaxlabel = tkinter.Label(self.FTFrame, text='k max (A\u207B\u00B9)',anchor='w')
 				self.kmaxlabel.grid(column=0, row=2, columnspan=1, rowspan=1, sticky='S')
 				
 				self.dk_scroll_scale = tkinter.Scale(self.FTFrame, orient='horizontal', from_=0, to=4, state='normal', digits = 3, resolution = 0.01, width=18, command=plot_data)
 				self.dk_scroll_scale.grid(column=1, columnspan=1, row=3, stick='EW')
-				self.dklabel = tkinter.Label(self.FTFrame, text='dK',anchor='w')
+				self.dklabel = tkinter.Label(self.FTFrame, text='dk (A\u207B\u00B9)',anchor='w')
 				self.dklabel.grid(column=0, row=3, columnspan=1, rowspan=1, sticky='S')
 				
 				self.kmin_scroll_scale.set(2.5)
@@ -3842,17 +3946,17 @@ class FourierTransform(tkinter.Frame):
 				
 				self.rmin_scroll_scale = tkinter.Scale(self.BFTFrame, orient='horizontal', from_=0, to=np.max(larch_data.r), digits = 3, resolution = 0.01, state='normal', width=18, command=plot_data)
 				self.rmin_scroll_scale.grid(column=1, columnspan=1, row=0, stick='EW')
-				self.rminlabel = tkinter.Label(self.BFTFrame, text='R min',anchor='w')
+				self.rminlabel = tkinter.Label(self.BFTFrame, text='R min (A)',anchor='w')
 				self.rminlabel.grid(column=0, row=0, columnspan=1, rowspan=1, sticky='S')
 				
 				self.rmax_scroll_scale = tkinter.Scale(self.BFTFrame, orient='horizontal', from_=0, to=np.max(larch_data.r), digits = 3, resolution = 0.01, state='normal', width=18, command=plot_data)
 				self.rmax_scroll_scale.grid(column=1, columnspan=1, row=1, stick='EW')
-				self.rmaxlabel = tkinter.Label(self.BFTFrame, text='R max',anchor='w')
+				self.rmaxlabel = tkinter.Label(self.BFTFrame, text='R max (A)',anchor='w')
 				self.rmaxlabel.grid(column=0, row=1, columnspan=1, rowspan=1, sticky='S')
 				
 				self.dR_scroll_scale = tkinter.Scale(self.BFTFrame, orient='horizontal', from_=0, to=4, state='normal', digits = 3, resolution = 0.01, width=18, command=plot_data)
 				self.dR_scroll_scale.grid(column=1, columnspan=1, row=2, stick='EW')
-				self.dRlabel = tkinter.Label(self.BFTFrame, text='dR',anchor='w')
+				self.dRlabel = tkinter.Label(self.BFTFrame, text='dR (A)',anchor='w')
 				self.dRlabel.grid(column=0, row=2, columnspan=1, rowspan=1, sticky='S')
 	
 				self.rmin_scroll_scale.set(1)
@@ -4053,7 +4157,7 @@ class Plotting(tkinter.Frame):
 				data_x = self.dataframe_collection[str(i)][str(self.dataframe_collection[str(i)].columns['E'])]
 			except:
 				try:
-					data_x = self.dataframe_collection[str(i)][str(self.dataframe_collection[str(i)].columns['Energy'])]
+					data_x = self.dataframe_collection[str(i)][str(self.dataframe_collection[str(i)].columns['E'])]
 				except:
 					data_x = self.dataframe_collection[str(i)].iloc[:,0]
 			
@@ -4212,6 +4316,20 @@ class Analysis(tkinter.Frame):
 		self.buttonmcrsave= tkinter.Button(self.AnalzeFrame, text='Save MCR', width=20, height=1,command=self.savemcrresults)
 		self.buttonmcrsave.grid(column=2, row=10, columnspan=1, rowspan=1)
 		
+		constrain_nn_label = tkinter.Label(self.AnalzeFrame, text='Non negativity',anchor='w')
+		constrain_nn_label.grid(column=0, row=11, columnspan=2, rowspan=1, sticky='W')
+		self.constrain_nn_usevar = tkinter.IntVar()
+		self.constrain_nn_usevar.set(1)
+		self.constrain_nn_usevarCheck = tkinter.Checkbutton(self.AnalzeFrame, variable=self.constrain_nn_usevar)
+		self.constrain_nn_usevarCheck.grid(column=2, row=11)
+		
+		constrain_us_label = tkinter.Label(self.AnalzeFrame, text='MCR sum to unity',anchor='w')
+		constrain_us_label.grid(column=0, row=12, columnspan=2, rowspan=1, sticky='W')
+		self.constrain_us_usevar = tkinter.IntVar()
+		self.constrain_us_usevar.set(1)
+		self.constrain_us_usevarCheck = tkinter.Checkbutton(self.AnalzeFrame, variable=self.constrain_us_usevar)
+		self.constrain_us_usevarCheck.grid(column=2, row=12)
+		
 ################################################################################
 	def fileminus(self):        
 		i = self.listbox5.curselection()[0]
@@ -4256,8 +4374,8 @@ class Analysis(tkinter.Frame):
 				self.D = np.asarray((self.data).values).T
 				
 			elif 'Energy' in self.column_names:
-				self.energy = self.data['Energy']
-				self.data.drop(['Energy'], axis=1, inplace=True)
+				self.energy = self.data['E']
+				self.data.drop(['E'], axis=1, inplace=True)
 				self.D = np.asarray((self.data).values).T
 				
 			elif ('mcr' in self.data_file) or ('MCR' in self.data_file):
@@ -4434,10 +4552,24 @@ class Analysis(tkinter.Frame):
 			Concentrations_df = pd.DataFrame(self.C_c)
 		else:
 			Concentrations_df = pd.DataFrame(self.C_u)
-
+			
+		Concentrations_df['Energy'] = self.energy
 		Concentrations_df['LOF'] = self.LOF
+		Concentrations_df.to_csv(self.folder+'\lcf_concentrations_'+str(np.shape(self.S)[1])+'.dat', sep='\t', index=False)
 		
-		Concentrations_df.to_csv(self.folder+'\lcf_concetrations.dat', sep='\t', index=True)
+		if self.constrainusevar.get() == 1:
+			fit = np.dot(self.C_c, self.S.T).T
+		else: 
+			fit = np.dot(self.C_u, self.S.T).T
+			
+		fit_df = pd.DataFrame(fit)
+		fit_df.insert(0, 'Energy', self.energy)
+		fit_df.to_csv(self.folder+'\lcf_fit_'+str(np.shape(self.S)[1])+'.dat', sep='\t', index=False)
+
+		Spectra_df = pd.DataFrame(self.S)
+		Spectra_df.insert(0, 'Energy', self.energy)
+		Spectra_df.to_csv(self.folder+'\lcf_spectra_'+str(np.shape(self.S)[1])+'.dat', sep='\t', index=False)
+		
 		
 		print('File Saved')
 	
@@ -4445,8 +4577,22 @@ class Analysis(tkinter.Frame):
 	def mcr(self):
 		print('Performing MCR')
 		
-		self.mcrals = McrAls(max_iter=50, st_regr='NNLS', c_regr='NNLS', 
+		if (self.constrain_nn_usevar.get() == 1) & (self.constrain_us_usevar.get() == 1):
+			self.mcrals = McrAls(max_iter=25, st_regr='NNLS', c_regr='NNLS', 
                 c_constraints=[ConstraintNonneg(), ConstraintNorm()])
+			print('contraining norm and non negativity')
+		if (self.constrain_nn_usevar.get() == 1) & (self.constrain_us_usevar.get() == 0):
+			self.mcrals = McrAls(max_iter=25, st_regr='NNLS', c_regr='NNLS', 
+                c_constraints=[ConstraintNonneg()])
+			print('contraining non negativity')
+		if (self.constrain_nn_usevar.get() == 0) & (self.constrain_us_usevar.get() == 1):
+			self.mcrals = McrAls(max_iter=25, st_regr='NNLS', c_regr='NNLS', 
+                c_constraints=[ConstraintNorm()])
+			print('contraining norm')
+		if (self.constrain_nn_usevar.get() == 0) & (self.constrain_us_usevar.get() == 0):
+			self.mcrals = McrAls(max_iter=25, st_regr='NNLS', c_regr='NNLS', 
+                c_constraints=[])
+			print('no contraints')
 
 		self.mcrals.fit(self.D, ST=self.S.T, verbose=True)
 		print('\nFinal MSE: {:.7e}'.format(self.mcrals.err[-1]))
@@ -4487,14 +4633,18 @@ class Analysis(tkinter.Frame):
 		Spectra_df = pd.DataFrame(self.mcrals.ST_opt_.T)
 		Concentrations_df = pd.DataFrame(self.mcrals.C_opt_)
 		Concentrations_df['LOF'] = self.LOF
+		Concentrations_df.to_csv(self.folder+'\mcr_concetrations_'+str(np.shape(self.mcrals.ST_opt_)[0])+'.dat', sep='\t', index=True)
 		
-		Concentrations_df.to_csv(self.folder+'\mcr_concetrations.dat', sep='\t', index=True)
-		
+		fit = np.dot(self.mcrals.C_opt_, self.mcrals.ST_opt_).T
+		fit_df = pd.DataFrame(fit)
+		fit_df.insert(0, 'Energy', self.energy)
+		fit_df.to_csv(self.folder+'\mcr_fit_'+str(np.shape(self.mcrals.ST_opt_)[0])+'.dat', sep='\t', index=False)
+
 		try:
 			Spectra_df.insert(0, 'Energy', self.energy)
-			Spectra_df.to_csv(self.folder+'\mcr_spectra.dat', sep='\t', index=False)
+			Spectra_df.to_csv(self.folder+'\mcr_spectra_'+str(np.shape(self.mcrals.ST_opt_)[0])+'.dat', sep='\t', index=False)
 		except:
-			Spectra_df.to_csv(self.folder+'\mcr_spectra.dat', sep='\t', index=False)
+			Spectra_df.to_csv(self.folder+'\mcr_spectra_'+str(np.shape(self.mcrals.ST_opt_)[0])+'.dat', sep='\t', index=False)
 			
 		print('Files Saved')
 				
