@@ -329,13 +329,20 @@ class DataExtract(tkinter.Frame):
 		self.blackmanfilterwindowvar = tkinter.DoubleVar()
 		self.blackmanfilterwindowvar.set(20)
 		self.blackmanfilterwindowentry = tkinter.Entry(self.CalibrationFrame, textvariable=self.blackmanfilterwindowvar)
-		self.blackmanfilterwindowentry.grid(column=1, row=7, columnspan=2)   
+		self.blackmanfilterwindowentry.grid(column=1, row=7, columnspan=2)  
+
+		naveragewindowlabel = tkinter.Label(self.CalibrationFrame, text='nAverage',anchor='w')
+		naveragewindowlabel.grid(column=0, row=8, columnspan=1, rowspan=1, sticky='N')
+		self.naveragewindowvar = tkinter.DoubleVar()
+		self.naveragewindowvar.set(2)
+		self.naveragewindowentry = tkinter.Entry(self.CalibrationFrame, textvariable=self.naveragewindowvar)
+		self.naveragewindowentry.grid(column=1, row=8, columnspan=2)   		
 		
 		self.twod = tkinter.DoubleVar()
 		self.twod.set(0.627120)
 		
-		self.calib_accept_button=tkinter.Button(self.CalibrationFrame, text='Accept', state='disabled', width=14, command=self.accept_calib).grid(column=1, row=8, stick='E')
-		self.calib_cancel_button=tkinter.Button(self.CalibrationFrame, text='Cancel', state='disabled', width=14, command=self.cancel_calib).grid(column=2, row=8, stick='W')
+		self.calib_accept_button=tkinter.Button(self.CalibrationFrame, text='Accept', state='disabled', width=14, command=self.accept_calib).grid(column=1, row=9, stick='E')
+		self.calib_cancel_button=tkinter.Button(self.CalibrationFrame, text='Cancel', state='disabled', width=14, command=self.cancel_calib).grid(column=2, row=9, stick='W')
 		
 ################################################################################
 #Normalization Frame	
@@ -778,9 +785,10 @@ class DataExtract(tkinter.Frame):
 				self.active_val = self.listbox.curselection()[0]
 				
 				self.data_file = os.path.splitext(data_file_long)[0]
+				self.data_folder = os.path.dirname(data_file_long)
 				self.edge = self.edge_type[self.listbox.curselection()[0]]
 				print('Edge Type :', self.edge)
-				self.folder = 'output_'+self.edge+'_'+self.data_file.split('/')[-1]
+				self.folder = self.data_folder+'/'+'output_'+self.edge+'_'+self.data_file.split('/')[-1]
 				print('Folder :', self.folder)
 				self.file_type = self.import_type[self.listbox.curselection()[0]]
 				print('File Type :', self.file_type)
@@ -1345,21 +1353,133 @@ class DataExtract(tkinter.Frame):
 					self.canvas.draw_idle()
 				
 			if self.trigger == 1:
-				if direction_flag == 1:
+				direction_flag_updated = 0
+				if (direction_flag == 1) or (self.naveragewindowvar.get() > 1):
 					try:
-						print('Changing to nearest Up direction spectrum')
 						if '.bin' in self.file_type:
-							ang,mu,std,direction_flag = self.data_read_bin(root_i+1, self.minr)
+							for i in range(np.int(self.naveragewindowvar.get())):
+								if i==0:
+									if direction_flag == 1:
+										direction_flag_updated = 1
+										ang,mu,std,direction_flag = self.data_read_bin(root_i+1, self.minr)
+									else:
+										ang,mu,std,direction_flag = self.data_read_bin(root_i, self.minr)
+									calib_df = pd.DataFrame()
+									calib_df['ang'] = ang
+									calib_df['mu'] = mu
+								else:
+									if direction_flag_updated == 1:
+										ang_cal,mu_cal,std,direction_flag_cal = self.data_read_bin(root_i+1+i, self.minr)
+									else:
+										ang_cal,mu_cal,std,direction_flag_cal = self.data_read_bin(root_i+i, self.minr)
+									calib_df2 = pd.DataFrame()
+									calib_df2['ang_cal'] = ang_cal
+									calib_df2['mu_'+str(i)] = mu_cal
+								if (self.naveragewindowvar.get() > 1) and (i > 0):
+									calib_df = calib_df.merge(calib_df2,how='left', left_on='ang', right_on='ang_cal')
+									calib_df.drop(['ang_cal'], axis=1, inplace=True)
+									#calib_df = calib_df.T.fillna(calib_df.mean(axis=1)).T
+									row_avgs = calib_df.mean(axis=1).values.reshape(-1,1)
+									calib_df = calib_df.fillna(0) + calib_df.isna().values * row_avgs
+									
+							ang = calib_df['ang']
+							calib_df.drop(['ang'], axis=1)
+							mu = calib_df.mean(axis=1)
+								
 						if '.qex' in self.file_type:
-							ang,mu,direction_flag = self.data_read_qex(root_i+1, self.minr)
-						self.ds_scroll_scale.set(root_i+1)
+							for i in range(np.int(self.naveragewindowvar.get())):
+								if i==0:
+									if direction_flag == 1:
+										direction_flag_updated = 1
+										ang,mu,direction_flag = self.data_read_qex(root_i+1, self.minr)
+									else:
+										ang,mu,direction_flag = self.data_read_qex(root_i, self.minr)
+									calib_df = pd.DataFrame()
+									calib_df['ang'] = ang
+									calib_df['mu'] = mu
+								else:
+									if direction_flag_updated == 1:
+										ang_cal,mu_cal,direction_flag_cal = self.data_read_qex(root_i+1+i, self.minr)
+									else:
+										ang_cal,mu_cal,direction_flag_cal = self.data_read_qex(root_i+i, self.minr)
+									calib_df2 = pd.DataFrame()
+									calib_df2['ang_cal'] = ang_cal
+									calib_df2['mu_'+str(i)] = mu_cal
+								if (self.naveragewindowvar.get() > 1) and (i > 0):
+									calib_df = calib_df.merge(calib_df2,how='left', left_on='ang', right_on='ang_cal')
+									calib_df.drop(['ang_cal'], axis=1, inplace=True)
+									#calib_df = calib_df.T.fillna(calib_df.mean(axis=1)).T
+									row_avgs = calib_df.mean(axis=1).values.reshape(-1,1)
+									calib_df = calib_df.fillna(0) + calib_df.isna().values * row_avgs
+									
+							ang = calib_df['ang']
+							calib_df.drop(['ang'], axis=1)
+							mu = calib_df.mean(axis=1)
+						if direction_flag_updated == 1:
+							self.ds_scroll_scale.set(root_i+1)
+							
 					except:
-						print('Changing to nearest Up direction spectrum')
 						if '.bin' in self.file_type:
-							ang,mu,std,direction_flag = self.data_read_bin(root_i-1, self.minr)
+							for i in range(np.int(self.naveragewindowvar.get())):
+								if i==0:
+									if direction_flag == 1:
+										direction_flag_updated = 1
+										ang,mu,std,direction_flag = self.data_read_bin(root_i-1, self.minr)
+									else:
+										ang,mu,std,direction_flag = self.data_read_bin(root_i, self.minr)
+									calib_df = pd.DataFrame()
+									calib_df['ang'] = ang
+									calib_df['mu'] = mu
+								else:
+									if direction_flag_updated == 1:
+										ang_cal,mu_cal,std,direction_flag_cal = self.data_read_bin(root_i-1-i, self.minr)
+									else:
+										ang_cal,mu_cal,std,direction_flag_cal = self.data_read_bin(root_i-i, self.minr)
+									calib_df2 = pd.DataFrame()
+									calib_df2['ang_cal'] = ang_cal
+									calib_df2['mu_'+str(i)] = mu_cal
+								if (self.naveragewindowvar.get() > 1) and (i > 0):
+									calib_df = calib_df.merge(calib_df2,how='left', left_on='ang', right_on='ang_cal')
+									calib_df.drop(['ang_cal'], axis=1, inplace=True)
+									#calib_df = calib_df.T.fillna(calib_df.mean(axis=1)).T
+									row_avgs = calib_df.mean(axis=1).values.reshape(-1,1)
+									calib_df = calib_df.fillna(0) + calib_df.isna().values * row_avgs
+									
+							ang = calib_df['ang']
+							calib_df.drop(['ang'], axis=1)
+							mu = calib_df.mean(axis=1)
+								
 						if '.qex' in self.file_type:
-							ang,mu,direction_flag = self.data_read_qex(root_i-1, self.minr)
-						self.ds_scroll_scale.set(root_i-1)
+							for i in range(np.int(self.naveragewindowvar.get())):
+								if i==0:
+									if direction_flag == 1:
+										direction_flag_updated = 1
+										ang,mu,direction_flag = self.data_read_qex(root_i-1-i, self.minr)
+									else:
+										ang,mu,direction_flag = self.data_read_qex(root_i-i, self.minr)
+									calib_df = pd.DataFrame()
+									calib_df['ang'] = ang
+									calib_df['mu'] = mu
+								else:
+									if direction_flag_updated == 1:
+										ang_cal,mu_cal,direction_flag_cal = self.data_read_qex(root_i-1-i, self.minr)
+									else:
+										ang_cal,mu_cal,direction_flag_cal = self.data_read_qex(root_i-i, self.minr)
+									calib_df2 = pd.DataFrame()
+									calib_df2['ang_cal'] = ang_cal
+									calib_df2['mu_'+str(i)] = mu_cal
+								if (self.naveragewindowvar.get() > 1) and (i > 0):
+									calib_df = calib_df.merge(calib_df2,how='left', left_on='ang', right_on='ang_cal')
+									calib_df.drop(['ang_cal'], axis=1, inplace=True)
+									#calib_df = calib_df.T.fillna(calib_df.mean(axis=1)).T
+									row_avgs = calib_df.mean(axis=1).values.reshape(-1,1)
+									calib_df = calib_df.fillna(0) + calib_df.isna().values * row_avgs
+									
+							ang = calib_df['ang']
+							calib_df.drop(['ang'], axis=1)
+							mu = calib_df.mean(axis=1)
+						if direction_flag_updated == 1:
+							self.ds_scroll_scale.set(root_i-1)
 				
 				if self.CalibFiltervar.get() == 1:
 					self.Wn = float(self.bf_scroll_scale.get())
@@ -1548,10 +1668,10 @@ class DataExtract(tkinter.Frame):
 		
 		print(self.data_file)
 		
-		if not os.path.exists('output_'+self.edge+'_'+self.data_file.split('/')[-1]):
-			os.makedirs('output_'+self.edge+'_'+self.data_file.split('/')[-1])
+		if not os.path.exists(self.folder):
+			os.makedirs(self.folder)
 			
-		self.folder = 'output_'+self.edge+'_'+self.data_file.split('/')[-1]
+		#self.folder = self.data_file+'/'+'output_'+self.edge+'_'+self.data_file.split('/')[-1]
 		
 		if '.bin' in self.file_type :
 			self.header_read_bin(self.data_file)
@@ -1593,7 +1713,7 @@ class DataExtract(tkinter.Frame):
 			#data_E = np.fromfile(f, dtype=self.dt, count = int(buffer))
 
 		options = [ncpus, np.max(buffer_points), self.headerSize, buffer, encoder_bin, self.nData, resample_factor, enconder_sampling, encoder_smooth, self.file_type]       
-		sub_f = 'batch_split_subroutine_v2.4.py'
+		sub_f = 'proxas/batch_split_subroutine_v2.4.py'
 		process = subprocess.Popen(['python', sub_f, str(options)], stdout=subprocess.PIPE, shell=True)
 
 		while process.poll() == None:
@@ -1780,8 +1900,8 @@ class DataExtract(tkinter.Frame):
 			self.twod.set(0.320000)
 			print('Mono Cyrstal = Si 311 LN')
 			
-		self.calib_accept_button=tkinter.Button(self.CalibrationFrame, text='Accept', state='normal', width=14, command=self.accept_calib).grid(column=1, row=8, stick='E')
-		self.calib_cancel_button=tkinter.Button(self.CalibrationFrame, text='Cancel', state='normal', width=14, command=self.cancel_calib).grid(column=2, row=8, stick='W')
+		self.calib_accept_button=tkinter.Button(self.CalibrationFrame, text='Accept', state='normal', width=14, command=self.accept_calib).grid(column=1, row=9, stick='E')
+		self.calib_cancel_button=tkinter.Button(self.CalibrationFrame, text='Cancel', state='normal', width=14, command=self.cancel_calib).grid(column=2, row=9, stick='W')
 			
 		self.cp_scroll_scale = tkinter.Scale(self.scrollFrame, orient='horizontal', from_=float(self.min_ang), to=float(self.max_ang), digits = 7, resolution = 0.000025, state='normal', width=18, command=self.plot_cp_line)
 		self.cp_scroll_scale.grid(column=1, columnspan=1, row=2, stick='EW')
@@ -1797,8 +1917,8 @@ class DataExtract(tkinter.Frame):
 ################################################################################	
 	def accept_calib(self):
 		self.d1.tkraise()
-		self.calib_accept_button=tkinter.Button(self.CalibrationFrame, text='Accept', state='disabled', width=14, command=self.accept_calib).grid(column=1, row=8, stick='E')
-		self.calib_cancel_button=tkinter.Button(self.CalibrationFrame, text='Cancel', state='disabled', width=14, command=self.cancel_calib).grid(column=2, row=8, stick='W')
+		self.calib_accept_button=tkinter.Button(self.CalibrationFrame, text='Accept', state='disabled', width=14, command=self.accept_calib).grid(column=1, row=9, stick='E')
+		self.calib_cancel_button=tkinter.Button(self.CalibrationFrame, text='Cancel', state='disabled', width=14, command=self.cancel_calib).grid(column=2, row=9, stick='W')
 		
 		self.thetac = np.arcsin(1239.852/(self.twod.get()*self.calibenervar.get()))*180/np.pi
 		calibvalue = [self.cp_scroll_scale.get(), self.thetac, float(self.bf_scroll_scale.get()), self.twod.get(), self.calibenervar.get()]
@@ -1815,8 +1935,8 @@ class DataExtract(tkinter.Frame):
 ################################################################################	
 	def cancel_calib(self):
 		self.d1.tkraise()
-		self.calib_accept_button=tkinter.Button(self.CalibrationFrame, text='Accept', state='disabled', width=14, command=self.accept_calib).grid(column=1, row=8, stick='E')
-		self.calib_cancel_button=tkinter.Button(self.CalibrationFrame, text='Cancel', state='disabled', width=14, command=self.cancel_calib).grid(column=2, row=8, stick='W')
+		self.calib_accept_button=tkinter.Button(self.CalibrationFrame, text='Accept', state='disabled', width=14, command=self.accept_calib).grid(column=1, row=9, stick='E')
+		self.calib_cancel_button=tkinter.Button(self.CalibrationFrame, text='Cancel', state='disabled', width=14, command=self.cancel_calib).grid(column=2, row=9, stick='W')
 		
 		self.trigger = 0
 		self.plot_spectrum()
@@ -2073,7 +2193,7 @@ class DataExtract(tkinter.Frame):
 			options=[int(len(self.calibroots)-5), self.data_file, self.folder, self.file_type, num_cpus, self.ProcessSamUsevar.get(), self.ProcessRefUsevar.get(), self.NormUsevar.get(), self.InterpUsevar.get(), self.AutoAlignUsevar.get(), self.edgestepvar.get(), self.Filtervar.get(), self.bf_scroll_scale.get(), self.eminvar.get(), self.emaxxanesvar.get(), self.emaxexafsvar.get(), self.constkUsevar.get(), self.kstepvar.get(), self.estepvar.get(), str(self.sam_numer.get()), str(self.sam_denom.get()), int(self.sam_logvar.get()), str(self.ref_numer.get()), str(self.ref_denom.get()), int(self.ref_logvar.get()), int(self.Flatvar.get()), self.updownvar.get(), self.edgestepwidth, self.BlackmanHarrisFiltervar.get(), self.blackmanfilterwindowvar.get()]
 			break_flag = False
 		   
-			sub_f = 'batch_extract_subroutine_v2.9.5.py'
+			sub_f = 'proxas/batch_extract_subroutine_v2.9.5.py'
 			start_loop = time.time()
 			process = subprocess.Popen(['python', sub_f, str(options)], stdout=subprocess.PIPE, shell=True)
 			

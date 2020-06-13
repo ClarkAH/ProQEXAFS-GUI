@@ -151,7 +151,7 @@ def targetFunc(q, etd, ID, options):
 						initialized = True
 							
 					ang,mu_sam,mu_ref,std_sam,std_ref,flag = data_read_bin(root_i, minr, headerSize, nData, ch_headerSize, nChannels, d_types)
-					errors_flag = True
+					errors_flag = False
 					
 				elif '.qex' in file_type:
 					if initialized == False:

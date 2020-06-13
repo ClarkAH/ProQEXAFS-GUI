@@ -3,8 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import simps
 
-folder = r'F:\XAS\4th_beamtime_Fe_PtFe\output_Fe_K_PtFe_4_Tuesday_monday_catalyst_90_co_cut_cycles\Export'
-file = 'PtFe_4_Tuesday_monday_catalyst_90_co_cut_cycles_sam_matrix_Up_normalised_5_average_2_average_1_average_1.dat'
+folder = r'F:\XAS\4th_beamtime_Fe_PtFe\output_Fe_K_PtFe_4_Monday_110_co_cut_cycles\Export'
+file = 'PtFe_4_Monday_110_co_cut_cycles_sam_matrix_Up_normalised_5_average_2_average_1.dat'
 import_data = pd.read_csv(folder+'/'+file, sep='\t', header=0)
 
 period = 60
