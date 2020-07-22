@@ -1381,10 +1381,6 @@ class DataExtract(tkinter.Frame):
 									#calib_df = calib_df.T.fillna(calib_df.mean(axis=1)).T
 									row_avgs = calib_df.mean(axis=1).values.reshape(-1,1)
 									calib_df = calib_df.fillna(0) + calib_df.isna().values * row_avgs
-									
-							ang = calib_df['ang']
-							calib_df.drop(['ang'], axis=1)
-							mu = calib_df.mean(axis=1)
 								
 						if '.qex' in self.file_type:
 							for i in range(np.int(self.naveragewindowvar.get())):
@@ -1411,10 +1407,7 @@ class DataExtract(tkinter.Frame):
 									#calib_df = calib_df.T.fillna(calib_df.mean(axis=1)).T
 									row_avgs = calib_df.mean(axis=1).values.reshape(-1,1)
 									calib_df = calib_df.fillna(0) + calib_df.isna().values * row_avgs
-									
-							ang = calib_df['ang']
-							calib_df.drop(['ang'], axis=1)
-							mu = calib_df.mean(axis=1)
+						
 						if direction_flag_updated == 1:
 							self.ds_scroll_scale.set(root_i+1)
 							
@@ -1444,10 +1437,6 @@ class DataExtract(tkinter.Frame):
 									#calib_df = calib_df.T.fillna(calib_df.mean(axis=1)).T
 									row_avgs = calib_df.mean(axis=1).values.reshape(-1,1)
 									calib_df = calib_df.fillna(0) + calib_df.isna().values * row_avgs
-									
-							ang = calib_df['ang']
-							calib_df.drop(['ang'], axis=1)
-							mu = calib_df.mean(axis=1)
 								
 						if '.qex' in self.file_type:
 							for i in range(np.int(self.naveragewindowvar.get())):
@@ -1474,20 +1463,21 @@ class DataExtract(tkinter.Frame):
 									#calib_df = calib_df.T.fillna(calib_df.mean(axis=1)).T
 									row_avgs = calib_df.mean(axis=1).values.reshape(-1,1)
 									calib_df = calib_df.fillna(0) + calib_df.isna().values * row_avgs
-									
-							ang = calib_df['ang']
-							calib_df.drop(['ang'], axis=1)
-							mu = calib_df.mean(axis=1)
+							
 						if direction_flag_updated == 1:
 							self.ds_scroll_scale.set(root_i-1)
 				
+				calib_df = calib_df.iloc[25:-25]
+				ang = calib_df['ang'].values
+				calib_df.drop(['ang'], axis=1)
+				mu = calib_df.mean(axis=1).values
 				if self.CalibFiltervar.get() == 1:
 					self.Wn = float(self.bf_scroll_scale.get())
 					N  = 3    # Filter order
 					self.B, self.A = signal.butter(N, self.Wn, output='ba')
 					mu = signal.filtfilt(self.B,self.A,mu)
-			
-				deriv_data = -np.gradient(mu)
+					
+				deriv_data = -np.gradient(mu)/np.gradient(ang)
 				self.update_figure(ang, deriv_data, 'Monochromator Encoder Angle (°)', 'Absorption Derivative')
 				self.cp_scroll_scale.set(ang[np.argmax(deriv_data)])
 				self.calibline = self.ax.axvline(ang[np.argmax(deriv_data)], ls='--', c='orange')
