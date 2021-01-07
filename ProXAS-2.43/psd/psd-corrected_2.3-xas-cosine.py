@@ -4,26 +4,26 @@ import matplotlib.pyplot as plt
 from scipy.integrate import simps
 import os
 
-folder = r'C:\Users\clark_a\Documents\Analysis\XPDF\PDF Newton\IR'
-file = '210816_1.0-reformat.dat'
+folder = r'Z:\09_2020\Natasa\IrO2_test_2\output_Ir_L3_3_IrO2_WE10_CE32_Ref13_1-1p60V_sin_restartafterdataacquisitionerror\Export'
+file = '3_IrO2_WE10_CE32_Ref13_1-1p60V_sin_sam_matrix_Both_normalised_2.dat'
 
 import_data = pd.read_csv(folder+'/'+file, sep='\t', header=0)
 
-period = 480
+period = 100
 nphase = 25
 
 start_period = 1
-end_period = 999
+end_period = 49
 
 phase_delay = 0
 
 w = 2*np.pi/period
 
 #max_n here should be quite large.
-max_n = 21
+max_n = 1
 
 #t1 is the pulse length (asymmetric in this case), t2 is the full period length and equal to period above
-t1 = 140
+t1 = 50
 t2 = period
 d = t1/t2
 
@@ -43,7 +43,7 @@ except:
 	period_average['E'] = import_data['energy']
 	
 def intergrand_function(chi_data,nw,t,phiPSD):
-	chi_ft = np.asarray(chi_data*np.sin(nw*t + phiPSD))
+	chi_ft = np.asarray(chi_data*np.cos(nw*t - phiPSD))
 	return chi_ft
 
 for j in range(int(max_n)): 
@@ -84,8 +84,8 @@ for j in range(int(max_n)):
 		
 	for k in range(len(phiPSD_grid)):
 		for i in range(len(energy)):	
-			y = (np.sin(n*d*np.pi))*(4*0.5/(n*np.pi))*(2/(period))*intergrand_function(chi_data[i], n*w, x, phiPSD_grid[k])
-			ft_out_1D[i] = (2*alpha)*simps(y,x)
+			y = (2/(period))*intergrand_function(chi_data[i], n*w, x, phiPSD_grid[k])
+			ft_out_1D[i] = (2*alpha)*(np.sin(n*d*np.pi))*(4/(2*n*np.pi))*simps(y,x)
 			
 		output_psd[str(k)] = ft_out_1D.real
 			
@@ -112,9 +112,9 @@ for j in range(int(max_n)):
 		for k in range(len(phiPSD_grid)):
 			output_psd_tot[str(k)] = output_psd[str(k)] + output_psd_tot[str(k)]
 	
-	output_psd.to_csv(folder+'/output_psd/'+str(os.path.splitext(file)[0])+'_psd_n='+str(n)+'_s'+str(start_period)+'_e'+str(end_period)+'_pd'+str(phase_delay)+'.dat', sep='\t', index=False)
-	output_psd_tot.to_csv(folder+'/output_psd/'+str(os.path.splitext(file)[0])+'_psd_tot_s'+str(start_period)+'_e'+str(end_period)+'_pd'+str(phase_delay)+'.dat', sep='\t', index=False)
-	period_average.to_csv(folder+'/output_psd/'+str(os.path.splitext(file)[0])+'_s'+str(start_period)+'_e'+str(end_period)+'_period_average_pd'+str(phase_delay)+'.dat', sep='\t', index=False)
+	output_psd.to_csv(folder+'/output_psd/'+str(os.path.splitext(file)[0])+'_psd_n='+str(n)+'_s'+str(start_period)+'_e'+str(end_period)+'_pd'+str(phase_delay)+'cosine.dat', sep='\t', index=False)
+	output_psd_tot.to_csv(folder+'/output_psd/'+str(os.path.splitext(file)[0])+'_psd_tot_s'+str(start_period)+'_e'+str(end_period)+'_pd'+str(phase_delay)+'cosine.dat', sep='\t', index=False)
+	period_average.to_csv(folder+'/output_psd/'+str(os.path.splitext(file)[0])+'_s'+str(start_period)+'_e'+str(end_period)+'_period_average_pd'+str(phase_delay)+'cosine.dat', sep='\t', index=False)
 	
 plt.figure(n+1)
 ax=plt.subplot(111)

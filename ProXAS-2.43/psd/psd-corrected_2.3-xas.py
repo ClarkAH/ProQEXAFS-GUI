@@ -4,24 +4,27 @@ import matplotlib.pyplot as plt
 from scipy.integrate import simps
 import os
 
-folder = r'C:\Users\clark_a\Documents\Analysis\XPDF\PDF Newton\IR'
-file = '210816_1.0-reformat.dat'
+folder = r'Z:\09_2020\Natasa\IrO2_test_1_sin\output_Ir_L3_IrO2_WE5_asym_1_1.6_5_15\Export'
+file = 'IrO2_WE5_asym_1_1.6_5_15_sam_matrix_Both_normalised_2.dat'
 
 import_data = pd.read_csv(folder+'/'+file, sep='\t', header=0)
 
-period = 480
+period = 100
 nphase = 25
 
 start_period = 1
-end_period = 999
+end_period = 49
 
 phase_delay = 0
 
 w = 2*np.pi/period
-max_n = 1
 
-t1 = 140
-t2 = 480
+#max_n here should be quite large.
+max_n = 21
+
+#t1 is the pulse length (asymmetric in this case), t2 is the full period length and equal to period above
+t1 = 25
+t2 = period
 d = t1/t2
 
 alpha = 1.05
@@ -35,9 +38,9 @@ headers = np.asarray(headers)
 
 period_average = pd.DataFrame()
 try:
-	period_average['wn'] = import_data['wn']
+	period_average['E'] = import_data['E']
 except:
-	period_average['wn'] = import_data['Wavenumber']
+	period_average['E'] = import_data['energy']
 	
 def intergrand_function(chi_data,nw,t,phiPSD):
 	chi_ft = np.asarray(chi_data*np.sin(nw*t + phiPSD))
@@ -45,9 +48,9 @@ def intergrand_function(chi_data,nw,t,phiPSD):
 
 for j in range(int(max_n)): 
 	n = j+1
-	print(np.sin(n*d*np.pi))
+	print(n, np.sin(n*d*np.pi))
 	
-	plt.figure(n)
+	#plt.figure(n)
 
 	if j == 0:
 		for i in range(period+1):
@@ -61,23 +64,23 @@ for j in range(int(max_n)):
 				#plt.plot(period_average['E'], period_average[str(i)])	
 					
 	x =  np.asarray(range(period_average.shape[1] - 1)) 
-	energy = np.asarray(period_average['wn'].values)
+	energy = np.asarray(period_average['E'].values)
 	
-	chi_data = np.asarray(period_average.drop(['wn'], axis=1).values)
+	chi_data = np.asarray(period_average.drop(['E'], axis=1).values)
 		
 	phiPSD_grid = np.linspace(0, 2*np.pi, nphase, endpoint=True)
 	phiPSD_grid = phiPSD_grid[0:-1]
 	
 	ft_out_1D = np.zeros(len(energy))
 			
-	ax=plt.subplot(111)
-	ax.text(0.9, 0.9, 'n='+str(n),
-        horizontalalignment='right',
-        verticalalignment='top',
-        transform=ax.transAxes)
+	#ax=plt.subplot(111)
+	#ax.text(0.9, 0.9, 'n='+str(n),
+    #    horizontalalignment='right',
+    #    verticalalignment='top',
+    #    transform=ax.transAxes)
 		
 	output_psd = pd.DataFrame()
-	output_psd['wn'] = period_average['wn']
+	output_psd['E'] = period_average['E']
 		
 	for k in range(len(phiPSD_grid)):
 		for i in range(len(energy)):	
@@ -86,19 +89,19 @@ for j in range(int(max_n)):
 			
 		output_psd[str(k)] = ft_out_1D.real
 			
-		if phiPSD_grid[k] <= np.pi:
-			ax.plot(output_psd['wn'], output_psd[str(k)], label='\u03C6'+' = '+str(int(np.around(180*(phiPSD_grid[k].real)/(np.pi), decimals=1)))+'\u00B0')
-		else:
-			ax.plot(output_psd['wn'], output_psd[str(k)], ls='--', label='\u03C6'+' = '+str(int(np.around(180*(phiPSD_grid[k].real)/(np.pi), decimals=1)))+'\u00B0')
+		#if phiPSD_grid[k] <= np.pi:
+		#	ax.plot(output_psd['E'], output_psd[str(k)], label='\u03C6'+' = '+str(int(np.around(180*(phiPSD_grid[k].real)/(np.pi), decimals=1)))+'\u00B0')
+		#else:
+		#	ax.plot(output_psd['E'], output_psd[str(k)], ls='--', label='\u03C6'+' = '+str(int(np.around(180*(phiPSD_grid[k].real)/(np.pi), decimals=1)))+'\u00B0')
 	
-	ax.legend(loc='upper left', ncol=2)
-			
-	plt.ion()
-	
-	if n == max_n:
-		plt.ioff()
-		
-	plt.show()
+	#ax.legend(loc='upper left', ncol=2)
+	#		
+	#plt.ion()
+	#
+	#if n == max_n:
+	#	plt.ioff()
+	#	
+	#plt.show()
 	
 	if not os.path.exists(folder+'/output_psd'):
 		os.makedirs(folder+'/output_psd')
@@ -112,3 +115,19 @@ for j in range(int(max_n)):
 	output_psd.to_csv(folder+'/output_psd/'+str(os.path.splitext(file)[0])+'_psd_n='+str(n)+'_s'+str(start_period)+'_e'+str(end_period)+'_pd'+str(phase_delay)+'.dat', sep='\t', index=False)
 	output_psd_tot.to_csv(folder+'/output_psd/'+str(os.path.splitext(file)[0])+'_psd_tot_s'+str(start_period)+'_e'+str(end_period)+'_pd'+str(phase_delay)+'.dat', sep='\t', index=False)
 	period_average.to_csv(folder+'/output_psd/'+str(os.path.splitext(file)[0])+'_s'+str(start_period)+'_e'+str(end_period)+'_period_average_pd'+str(phase_delay)+'.dat', sep='\t', index=False)
+	
+plt.figure(n+1)
+ax=plt.subplot(111)
+ax.text(0.9, 0.9, 'n='+str(n),
+       horizontalalignment='right',
+       verticalalignment='top',
+       transform=ax.transAxes)
+	
+for k in range(len(phiPSD_grid)):
+	if phiPSD_grid[k] <= np.pi:
+		ax.plot(output_psd_tot['E'], output_psd_tot[str(k)], label='\u03C6'+' = '+str(int(np.around(180*(phiPSD_grid[k].real)/(np.pi), decimals=1)))+'\u00B0')
+	else:
+		ax.plot(output_psd_tot['E'], output_psd_tot[str(k)], ls='--', label='\u03C6'+' = '+str(int(np.around(180*(phiPSD_grid[k].real)/(np.pi), decimals=1)))+'\u00B0')
+		
+ax.legend(loc='upper left', ncol=2)
+plt.show()

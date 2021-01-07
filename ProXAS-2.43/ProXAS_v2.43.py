@@ -256,7 +256,7 @@ class DataExtract(tkinter.Frame):
 		refactor = tkinter.Label(self.EncoderFrame, text='Refactor',anchor='w')
 		refactor.grid(column=0, row=1, columnspan=2, rowspan=1, sticky='N')
 		self.splitrefacvar = tkinter.IntVar()
-		self.splitrefacvar.set(100)
+		self.splitrefacvar.set(150)
 		self.splitrefactorentry = tkinter.Entry(self.EncoderFrame, textvariable=self.splitrefacvar)
 		self.splitrefactorentry.grid(column=2, row=1, columnspan=1) 
 		
@@ -1802,7 +1802,7 @@ class DataExtract(tkinter.Frame):
 		
 		for i in range(len(self.root_test)):
 			roots_new.append(self.roots[i])
-			if self.root_test[i] > 1.5*Ave:
+			if self.root_test[i] > 1.8*Ave:
 				roots_new.append(self.roots[i]+Ave)
 				
 		self.roots = roots_new
@@ -1813,24 +1813,29 @@ class DataExtract(tkinter.Frame):
 ################################################################################  
 	def delete_split(self):
 		Ave = np.average(self.root_test)
-		
 		print(Ave)
 		
-		if self.root_test[0] < 0.98*Ave:
-			self.roots = np.delete(self.roots, 0)
-			self.angs = np.delete(self.angs, 0)
+		def check(list, val): 
+			return(all(x > val for x in list)) 
 			
-		if self.root_test[-1] < 0.98*Ave:
-			self.roots = np.delete(self.roots, -1)
-			self.angs = np.delete(self.angs, -1)
-			
-		if self.root_test[0] > 2.5*Ave:
-			self.roots = np.delete(self.roots, 0)
-			self.angs = np.delete(self.angs, 0)
-			
-		if self.root_test[-1] > 2.5*Ave:
-			self.roots = np.delete(self.roots, -1)
-			self.angs = np.delete(self.angs, -1)
+		if (check(self.root_test, 0.9*Ave)): 
+			test = False
+		else:
+			test = True
+		
+		COUNTER = 0
+		while test == True:
+			if self.root_test[COUNTER] < 0.9*Ave:
+				self.roots = np.delete(self.roots, COUNTER+1)
+				self.angs = np.delete(self.angs, COUNTER+1)
+				COUNTER = 0
+				self.root_test = np.diff(self.roots)
+				if (check(self.root_test, 0.9*Ave)): 
+					test = False
+				else:
+					test = True
+			else:
+				COUNTER = COUNTER + 1
 			
 		self.plotroots(self.angs)
 
@@ -2949,7 +2954,8 @@ class PostProcess(tkinter.Frame):
 						#print(j, idx)
 				else:
 					idx = npi.indices(np.asarray(idxs), np.asarray(idxs)[(np.asarray(idxs) >= (j*Nsum)) & (np.asarray(idxs) < (j*Nsum)+Nsum)])
-					#print(j, idx)
+					
+				print(j, idx)
 				if len(idx) > 0:
 					self.data_sum[str(j)] = (self.data.iloc[:,idx+1]).mean(axis=1)
 					if self.errors_flag == True:

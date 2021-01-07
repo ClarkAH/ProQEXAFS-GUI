@@ -4,21 +4,21 @@ import matplotlib.pyplot as plt
 from scipy.integrate import simps
 import os
 
-folder = r'C:\Users\clark_a\Documents\Analysis\XPDF\PDF Newton\IR'
-file = '210816_1.0-reformat.dat'
+folder = r'Z:\04_2020\Adam\06052020\output_Ce_L3_Ce75Sn25O2_CeL3_modulation_40s_150C\Export'
+file = 'Ce75Sn25O2_CeL3_modulation_40s_150C_sam_matrix_Both_normalised_2.dat'
 
 import_data = pd.read_csv(folder+'/'+file, sep='\t', header=0)
 
-period = 480
+period = 40
 nphase = 25
 
-start_period = 1
+start_period = 10
 end_period = 999
 
 phase_delay = 0
 
 w = 2*np.pi/period
-max_n = 17
+max_n = 1
 
 alpha = 1.05
 
@@ -31,9 +31,9 @@ headers = np.asarray(headers)
 
 period_average = pd.DataFrame()
 try:
-	period_average['wn'] = import_data['wn']
+	period_average['E'] = import_data['E']
 except:
-	period_average['wn'] = import_data['Wavenumber']
+	period_average['E'] = import_data['Energy']
 	
 def intergrand_function(chi_data,nw,t,phiPSD):
 	chi_ft = np.asarray(chi_data*np.sin(nw*t + phiPSD))
@@ -56,9 +56,9 @@ for j in range(int((max_n-1)/2)+1):
 				#plt.plot(period_average['E'], period_average[str(i)])	
 					
 	x =  np.asarray(range(period_average.shape[1] - 1)) 
-	energy = np.asarray(period_average['wn'].values)
+	energy = np.asarray(period_average['E'].values)
 	
-	chi_data = np.asarray(period_average.drop(['wn'], axis=1).values)
+	chi_data = np.asarray(period_average.drop(['E'], axis=1).values)
 		
 	phiPSD_grid = np.linspace(0, 2*np.pi, nphase, endpoint=True)
 	phiPSD_grid = phiPSD_grid[0:-1]
@@ -72,7 +72,7 @@ for j in range(int((max_n-1)/2)+1):
         transform=ax.transAxes)
 		
 	output_psd = pd.DataFrame()
-	output_psd['wn'] = period_average['wn']
+	output_psd['E'] = period_average['E']
 		
 	for k in range(len(phiPSD_grid)):
 		for i in range(len(energy)):	
@@ -82,9 +82,9 @@ for j in range(int((max_n-1)/2)+1):
 		output_psd[str(k)] = ft_out_1D.real
 			
 		if phiPSD_grid[k] <= np.pi:
-			ax.plot(output_psd['wn'], output_psd[str(k)], label='\u03C6'+' = '+str(int(np.around(180*(phiPSD_grid[k].real)/(np.pi), decimals=1)))+'\u00B0')
+			ax.plot(output_psd['E'], output_psd[str(k)], label='\u03C6'+' = '+str(int(np.around(180*(phiPSD_grid[k].real)/(np.pi), decimals=1)))+'\u00B0')
 		else:
-			ax.plot(output_psd['wn'], output_psd[str(k)], ls='--', label='\u03C6'+' = '+str(int(np.around(180*(phiPSD_grid[k].real)/(np.pi), decimals=1)))+'\u00B0')
+			ax.plot(output_psd['E'], output_psd[str(k)], ls='--', label='\u03C6'+' = '+str(int(np.around(180*(phiPSD_grid[k].real)/(np.pi), decimals=1)))+'\u00B0')
 	
 	ax.legend(loc='upper left', ncol=2)
 			
