@@ -18,13 +18,13 @@ import numpy_indexed as npi
 from scipy import special
 from scipy.optimize import curve_fit
 from larch import Interpreter
-from larch_plugins.xafs import xftf, ftwindow, pre_edge, autobk, xftr
+from larch.xafs import xftf, ftwindow, pre_edge, autobk, xftr
 from scipy.signal import savgol_filter
 from matplotlib import gridspec
 import matplotlib.ticker as ticker
-from larch import ValidateLarchPlugin, parse_group_args
-from larch_plugins.xafs import set_xafsGroup
-from larch_plugins.xafs.cauchy_wavelet import cauchy_wavelet
+from larch import parse_group_args
+from larch.xafs import set_xafsGroup
+from larch.xafs.cauchy_wavelet import cauchy_wavelet
 from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable
 from scipy import stats
 from scipy.signal import find_peaks
